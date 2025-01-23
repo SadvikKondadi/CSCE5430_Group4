@@ -6,6 +6,6 @@ skills of sanjay : MYSQL, PYTHON
 Group member name : Padmaja Soma
 Skills of Padmaja : React, Css, Js(Frontend), Python, Java node(Backend), SQL, Mangodb(Database)
 Group member name : Nithin Reddy Pinikesi
-Skills of Nithin : Python, java, MYSQL
+Skills of Nithin : java, MYSQL, HTML
 Group member name : Deepak Reddy Punuru
 Skills of Deepak  : PYTHON, JAVA ,MYSQL
