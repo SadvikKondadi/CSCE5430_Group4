@@ -1,2 +1,3 @@
 Group Name: Group 4
 Created By: Sadvik Kondadi
+Skills of Sadvik : HTML, CSS(frontend), MYSQL(Database), Python(programming language)
