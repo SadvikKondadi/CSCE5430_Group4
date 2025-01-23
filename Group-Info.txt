@@ -3,3 +3,5 @@ Created By: Sadvik Kondadi
 skills of Sadvik: HTML, CSS(frontend), MYSQL(Database), Python(programming language)
 Group member name : SANJAY RAMASWAMY
 skills of sanjay : MYSQL, PYTHON
+Group member name : Padmaja Soma
+Skills of Padmaja : React, Css, Js(Frontend), Python, Java node(Backend), SQL, Mangodb(Database)
