@@ -15,3 +15,5 @@ Group Member Name : Shashank Kodishala
 Skills of Shashank : FrontEnd Html, Css(Frontend), MYSQL, workbench (database), C, Python(Programming Languages)
 Group member : Thanwish Ram Pothugunta
 Skills of Ram : Basics of Python, Java, HTML, CSS, Java Script 
+Group member : Deepu Gondhi
+Skills of Ram :Python, HTML, CSS, MYSQL
