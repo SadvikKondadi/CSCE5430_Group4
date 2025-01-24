@@ -13,3 +13,5 @@ Group Member Name : Sai Chandra Teja Akkala
 Skills of Teja    : ReactJS, Html, Css(Frontend), MYSQL, Mangodb(Database), C++, Java(Programming Languages)
 Group Member Name : Shashank Kodishala
 Skills of Shashank : FrontEnd Html, Css(Frontend), MYSQL, workbench (database), C, Python(Programming Languages)
+Group member : Thanwish Ram Pothugunta
+Skills of Ram : Basics of Python, Java, HTML, CSS, Java Script 
