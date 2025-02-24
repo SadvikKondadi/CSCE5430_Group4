@@ -1,0 +1,2 @@
+Submitted the deliverable-2 file in planning documents directory which explain the sub components of the proposed system with a  stucture diagram and functional and non-functional requirements with phases at which stage what functional requirements will be accomplished.
+Updated the meeting.txt file with the latest team meetings of Group_4 for deliverable-2
