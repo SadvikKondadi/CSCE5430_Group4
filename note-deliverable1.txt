@@ -1,0 +1,9 @@
+We created github repository of group.
+Next we created group-info.txt file and commited members information.
+Created directories of the project. They are:
+Database directory: for storing the Db files
+Planning documents folder: for storing the project proposal files and deliverable files.
+Source Code directory: which consists of all the implementation code files 
+                     - app.py (main python file)
+requirements.txt - consits of all the packages and libraries to be installed for importing by the code in th source code folder.
+meeting.txt - consists of meeting information of team and attendance.
