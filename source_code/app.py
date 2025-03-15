@@ -293,6 +293,19 @@ def maina():
             else:
                 st.write(f"No documents found with the key: {option}")
 
+    elif page == "Notification":
+        st.title("Customer Service")
+        c=cust.find({},{'query':1,'id':1,'_id':0})
+        print('c')
+        print(c)
+        if c!=[]:
+            i=[i for i in c]
+            print(i)
+            print('i')
+            for j in i:
+                if st.button(f"{j['id']}:{j['query']}"):
+                    cust.delete_one({'id':j['id'],'query':j['query']})
+
 # Control access
 if not st.session_state["reg_in"]:
     if not st.session_state["logged_in"]:
