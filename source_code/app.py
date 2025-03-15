@@ -38,7 +38,7 @@ def logout():
 
 def mainc():
     st.session_state.notif=[]
-    llm=ChatOpenAI(api_key='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',                            #st.secrets["OPEN_API_KEY"]
+    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
     prompt_template='''If any actionable prompt is given the state yes else give the response.   
