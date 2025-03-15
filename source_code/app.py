@@ -1,5 +1,8 @@
 import streamlit as st
 from pymongo import MongoClient
+from langchain_openai import ChatOpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 
 # Simulated user database
@@ -32,6 +35,41 @@ def logout():
     st.session_state["role"] = ""
     st.session_state["rerun"] = True
     st.rerun()
+
+def mainc():
+    st.session_state.notif=[]
+    llm=ChatOpenAI(api_key='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',                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+    prompt_template='''If any actionable prompt is given the state yes else give the response.   
+    Text:
+    {context}'''
+    PROMPT = PromptTemplate(
+    template=prompt_template, input_variables=["context"])
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [{"role": "assistant", "content": "Hello! Welcome to customer care. How Can I help you?"}]
+
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    if prompt := st.chat_input():
+    
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
+        chain = LLMChain(llm=llm, prompt=PROMPT)
+        answer=chain.run(prompt)
+        if re.search(r'\bYes\b', answer):
+            cust.insert_one({'id':st.session_state["userid"],'query':prompt})
+            st.chat_message("assistant").write("Notified to the Admin, He will get back to you soon...")
+        else:
+            prompt_template='''Accept the queries as a customer care and give an accuarte reply.   
+            Text:
+            {context}'''
+            PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context"])
+            chain = LLMChain(llm=llm, prompt=PROMPT).run(prompt)
+            st.session_state.messages.append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
 
 
 #Reg function
@@ -98,6 +136,10 @@ def maini():
         key_values = [doc['course'] for doc in documents if 'course' in doc]
         optionm = st.selectbox("Course",(key_values))
 
+    elif page == "Customer Care":
+        st.title("Customer Care")
+        mainc()
+
     
     if st.button("Logout"):
         logout()
@@ -121,7 +163,10 @@ def mains():
             key_values = [doc['course'] for doc in documents if 'course' in doc]
         c = st.selectbox("course",key_values)
         
-    
+    elif page == "Customer Care":
+        st.title("Customer Care")
+        mainc() 
+
     if st.button("Logout"):
         logout()
 
