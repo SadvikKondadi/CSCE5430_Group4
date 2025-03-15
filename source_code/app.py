@@ -166,6 +166,13 @@ def mains():
     if st.button("Logout"):
         logout()
 
+def maina():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Home Page","Instruct Reg", "Course Reg", "Course View","Course Assign","Assign View","Notification"])
+    
+    if page == "Home Page":
+        st.title("Home Page")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
 
 # Control access
 if not st.session_state["reg_in"]:
