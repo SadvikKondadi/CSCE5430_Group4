@@ -60,12 +60,6 @@ def reg():
             st.session_state["rerun"] = True
             st.rerun()
 
-def display_pdf(pdf_bytes):
-    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
-    #binary_data = pdf_file.getvalue()
-    #pdf_viewer(input=binary_data,width=700)
 
 
 # Login function
@@ -91,41 +85,6 @@ def login():
             else:
                     st.error("Invalid Userid")
 
-
-def mainc():
-    st.session_state.notif=[]
-    llm=ChatOpenAI(api_key='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',                            #st.secrets["OPEN_API_KEY"]
-                   model_name='gpt-4o',
-                   temperature=0.0)
-    prompt_template='''If any actionable prompt is given the state yes else give the response.   
-    Text:
-    {context}'''
-    PROMPT = PromptTemplate(
-    template=prompt_template, input_variables=["context"])
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [{"role": "assistant", "content": "Hello! Welcome to customer care. How Can I help you?"}]
-
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
-
-    if prompt := st.chat_input():
-    
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
-        chain = LLMChain(llm=llm, prompt=PROMPT)
-        answer=chain.run(prompt)
-        if re.search(r'\bYes\b', answer):
-            cust.insert_one({'id':st.session_state["userid"],'query':prompt})
-            st.chat_message("assistant").write("Notified to the Admin, He will get back to you soon...")
-        else:
-            prompt_template='''Accept the queries as a customer care and give an accuarte reply.   
-            Text:
-            {context}'''
-            PROMPT = PromptTemplate(
-            template=prompt_template, input_variables=["context"])
-            chain = LLMChain(llm=llm, prompt=PROMPT).run(prompt)
-            st.session_state.messages.append({"role": "assistant", "content": chain})
-            st.chat_message("assistant").write(chain)
        
 # Main app interface Student
 def maini():
@@ -173,6 +132,47 @@ def maina():
     if page == "Home Page":
         st.title("Home Page")
         st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+
+    elif page == "Instruct Reg":
+        st.title("Instructor Registration")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        new_userid = st.text_input("New Userid")
+        new_password = st.text_input("New Password", type="password")
+        s=st.text_input("Specialization")
+        if st.button("Register"):
+            if collection.find_one({"id": new_userid}) is not None:
+                st.warning("The UserID already EXIST.")
+            else:
+                if new_userid and new_password:
+                    y={"id":new_userid,"pwd":new_password,"role":'Instructor',"spec":s,"bal":300}
+                    collection.insert_one(y)
+                    st.success('Registered Sucessfully')
+                else:
+                    st.warning("Please enter both userid and password.")
+
+    elif page == "Course Reg":
+        st.title("Course Registration")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        s=st.text_input("Specialization")
+        c=st.text_input("Course")
+        exist=list(collection1.find({'spec':s,'course':c}))
+        print('exist')
+        print(exist)
+        if st.button("Insert"):
+                if exist ==[]:
+                    spec=collection1.find_one({"spec": s})
+                    if spec is not None:
+                        a=spec['course']
+                        a.append(c)
+                        collection1.update_one({"spec": s}, {"$set":{'course':a}})
+                        st.success(f"Data appended successfully to key: {c}")
+                    else:
+                        # Create a new document if key does not exist
+                            collection1.insert_one({'spec':s,'course':[c]})
+                            st.success(f"New key created, data inserted: {s}")
+                else:
+                        st.warning("The Subject Already Exist")
+
 
 # Control access
 if not st.session_state["reg_in"]:
