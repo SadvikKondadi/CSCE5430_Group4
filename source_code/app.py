@@ -233,6 +233,20 @@ def maina():
                 else:
                     st.write(f"No documents found with the key: {option}")
 
+    elif page == "Assign View":
+        st.title("Assign View")
+        st.write("Welcome to the Assign View.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        option = st.selectbox("Specialization",(key_values))
+        if option:
+        # Find all documents where the key exists
+            courses = collection2.find({'spec':option})
+            if documents:
+                st.write(f"Documents with the key '{option}':")
+                st.dataframe(courses)  # Display documents in a table format
+            else:
+                st.write(f"No documents found with the key: {option}")
 
 # Control access
 if not st.session_state["reg_in"]:
