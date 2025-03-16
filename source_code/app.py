@@ -99,6 +99,47 @@ def reg():
             st.rerun()
 
 
+def display_pdf(pdf_bytes):
+    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+    #binary_data = pdf_file.getvalue()
+    #pdf_viewer(input=binary_data,width=700)
+
+def retrival(c,i,o):
+    module=[]
+    pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
+    if pdf_files!=[]:
+        for file in pdf_files:
+            metadata = file.get("metadata", {})
+            print(metadata)
+            if metadata['course']==c and metadata['id']==i and metadata['option']==o:
+                module.append(metadata['name'])
+    n=m.find({'id':i,'option':o},{"name":1})
+    if n is not None:
+        for f in n:
+            module.append(f['name'])
+        selected_filename = st.selectbox("Select a PDF to View",module)
+
+    query = {"metadata.name": selected_filename}
+    results = list(db.fs.files.find(query, {"metadata": 1}))
+    print('results')
+    print(results)
+    if results !=[]:
+        st.write(results[0]['metadata']['description'])
+        file_id = results[0]['_id']
+        print('p')
+        print(file_id)
+        pdf_data = fs.get(file_id)
+        if results[0]['metadata']['filename'].split(".")[1]=='pdf':
+            display_pdf(pdf_data.read())
+        st.download_button(label="Download PDF", data=pdf_data.read(), file_name=selected_filename)    
+    
+
+    n=m.find_one({"name":selected_filename})
+    if n is not None:
+        st.write(n['description'])
+    return(selected_filename)
 
 # Login function
 def login():
@@ -135,7 +176,60 @@ def maini():
         documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
         key_values = [doc['course'] for doc in documents if 'course' in doc]
         optionm = st.selectbox("Course",(key_values))
-    
+    elif page == "Module":
+        st.title("Module")
+        st.write("Welcome to the Module creation page.")
+        flag = st.toggle("AI Correction")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        name=st.text_input("Enter the module name")
+        e=None
+        existing_file = db.fs.files.find_one({"metadata.name": name})
+        e=m.find_one({"name":name})
+        if existing_file is not None or e is not None:
+            st.warning("⚠️ A file with this unique ID already exists! Please enter a different ID.")
+        else:
+            description=st.text_area("Enter the text")
+            # File uploader widget
+            uploaded_file = st.file_uploader("Upload a PDF file", type=[])
+            option = st.selectbox("Module",('Learning Content','Assignment','Assesment'))
+            if option=='Learning Content' or option=='Assignment':
+                if option=='Assignment':
+                    'Enter Assignment Deadline'
+                    d=st.date_input("📅Date:",format='MM/DD/YYYY')
+                    t=st.time_input("⏰Time:",value=time(0,0))
+                    dt= datetime.combine(d,t)
+                if st.button("Upload"):
+                    if uploaded_file is not None:
+                        st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+                        # Convert file to binary for MongoDB storage
+                        file_data = uploaded_file.read()
+                        
+                        # Check if file already exists in MongoDB
+                        existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                        
+                        if existing_file:
+                            st.warning("⚠️ File already exists in MongoDB.")
+                        else:
+                            # Store file in GridFS
+                            if option=='Learning Content':
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
+                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+                            else:
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
+                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+                    else:
+                        if option=='Learning Content':
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
+                            st.success(f"✅ Uploaded")
+                        else:
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
+                            st.success(f"✅ Uploaded")
+
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc()
