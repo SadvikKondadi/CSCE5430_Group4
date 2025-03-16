@@ -140,6 +140,74 @@ def retrival(c,i,o):
     if n is not None:
         st.write(n['description'])
     return(selected_filename)
+def retrivala(c,i):
+    module=[]
+    pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
+    if pdf_files!=[]:
+        for file in pdf_files:
+            metadata = file.get("metadata", {})
+            if metadata['course']==c and metadata['id']==i and metadata['option']=='Assesment':
+                module.append(metadata['name'])
+    
+    n=m.find({'id':i,'option':'Assesment'},{"name":1})
+    
+    if n is not None:
+        for f in n:
+            module.append(f['name'])
+        selected_filename = st.selectbox("Select a PDF to View",module)
+
+    query = {"metadata.name": selected_filename}
+    results = list(db.fs.files.find(query, {"metadata": 1}))
+    if results!=[]:
+        # Dropdown to select a PDF file
+        # Retrieve the PDF file from MongoDB
+        file_id = results[0]['_id']
+        pdf_data = fs.get(file_id).read()
+        if results[0]['filename'].split(".")[1]=='pdf':
+            display_pdf(pdf_data.read())
+        # Convert to bytes and display
+        st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
+        print('r')
+        print(results)
+        if results[0]['choice']=='Descriptive':
+            st.write(results[0]['metadata']['description'])
+            ans=st.text_area('Enter the Answer')
+
+        if results[0]['choice']=='MCQ':
+            ans=st.radio(results[0]['metadata']['description'],[results[0]['metadata']['a']])
+
+        if results[0]['choice']=='More than One Answer MCQ':
+            ans=[]
+            for i in results[0]['metadata']['a']:
+                ci=st.checkbox(i)
+            ans.append(ci)
+
+        if results[0]['choice']=='True or False':
+            ans=st.radio(results[0]['metadata']['description'],[True,False])
+
+        assign.insert_one({'course':c,'ins':i,'mod':selected_filename,'ans':ans})
+        
+    n=m.find_one({"name":selected_filename})
+    if n is not None:
+        if n['option']=='Assesment':
+            if n['choice']=='Descriptive':
+                st.write(n['description'])
+                ans=st.text_area('Enter the Answer')
+            if n['choice']=='MCQ':
+                ans=st.radio(n['description'],n['a'])
+            if n['choice']=='More than One Answer MCQ':
+                ans=[]
+                for i in n['a']:
+                    ci=st.checkbox(i)
+                ans.append(ci)
+            if n['choice']=='True or False':
+                ans=st.radio(n['description'],['True','False'])
+
+            if st.button('submit'):
+                if ans==n['ans']:
+                    st.write('✅Correct')
+                else:
+                    st.write('Wrong')
 
 # Login function
 def login():
@@ -229,6 +297,89 @@ def maini():
                         else:
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
                             st.success(f"✅ Uploaded")
+            if option=='Assesment':
+                m.delete_many({option:"Assesment"})
+                choice = st.selectbox("Type of Question",('Descriptive','MCQ','More than One Answer MCQ','True or False'))
+                if choice=='Descriptive':
+                    if st.button("Upload"):
+                        if uploaded_file is not None:
+                            st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+                            # Convert file to binary for MongoDB storage
+                            file_data = uploaded_file.read()
+                            
+                            # Check if file already exists in MongoDB
+                            existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                            
+                            if existing_file:
+                                st.warning("⚠️ File already exists in MongoDB.")
+                            else:
+                                # Store file in GridFS
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice})
+                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+                        else:
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice})
+                            st.success(f"✅ Uploaded")
+
+                if choice=='MCQ' or choice=='More than One Answer MCQ':
+                    n=int(st.text_input("No. of options:",4))
+                    a=[]
+                    for i in range(n):
+                        x=st.text_input(f"{i}.")
+                        a.append([x])
+                    if choice=='MCQ':
+                        an=st.text_input('Ans:')
+                    if choice=='More than One Answer MCQ':
+                        an=[]
+                        n=int(st.text_input("No. of options:",4))
+                        for i in range(n):
+                            x=st.text_input(f"{i}.")
+                            an.append([x])
+
+                    if st.button("Upload"):
+                            if uploaded_file is not None:
+                                st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+                                # Convert file to binary for MongoDB storage
+                                file_data = uploaded_file.read()
+                                
+                                # Check if file already exists in MongoDB
+                                existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                                
+                                if existing_file:
+                                    st.warning("⚠️ File already exists in MongoDB.")
+                                else:
+                                    # Store file in GridFS
+                                    file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'a':a,'ans':an})
+                                    st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+                            else:
+                                m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'a':a,'ans':an})
+                                st.success(f"✅ Uploaded")
+        
+                if choice=='True or False':
+                    an=st.text_input('Ans:')
+                    if st.button("Upload"):
+                            if uploaded_file is not None:
+                                st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+                                # Convert file to binary for MongoDB storage
+                                file_data = uploaded_file.read()
+                                
+                                # Check if file already exists in MongoDB
+                                existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                                
+                                if existing_file:
+                                    st.warning("⚠️ File already exists in MongoDB.")
+                                else:
+                                    # Store file in GridFS
+                                    file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'ans':an})
+                                    st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+                            else:
+                                m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'ans':an})
+                                st.success(f"✅ Uploaded")
 
     elif page == "view Assignments":
         st.title("view Assignments")
