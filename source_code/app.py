@@ -230,6 +230,46 @@ def maini():
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
                             st.success(f"✅ Uploaded")
 
+    elif page == "view Assignments":
+        st.title("view Assignments")
+        module=[]
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            optionm = st.selectbox("Course",(key_values))
+
+        pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
+        if pdf_files!=[]:
+            for file in pdf_files:
+                metadata = file.get("metadata", {})
+                if metadata['course']==optionm:
+                    module.append(metadata['name'])
+        n=m.find({},{"name":1})
+        if n is not None:
+            for f in n:
+                module.append(f['name'])
+        selected_filename = st.selectbox("Select module",module)
+        pdf_files = dba.fs.files.find({'filename': {"$regex": selected_filename}}, {"filename": 1})
+        print('pdf_files')
+        print(pdf_files)
+        
+        a=[]
+        if pdf_files is not None:
+            for i in pdf_files:
+                print(i)
+                a.append(i['filename'])    
+        selected_filename = st.selectbox("Select a PDF to View",a)
+        file_id = dba.fs.files.find_one({"filename":selected_filename}, {"_id": 1})
+        print('id')
+        print(file_id)
+        if file_id is not None:
+            pdf_data = fsa.get(file_id['_id']).read()
+            if 'pdf' in selected_filename.split('.'):
+                display_pdf(pdf_data)
+        # Convert to bytes and display
+        st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
+                        
+
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc()
@@ -257,6 +297,32 @@ def mains():
             key_values = [doc['course'] for doc in documents if 'course' in doc]
         c = st.selectbox("course",key_values)
         
+    elif page == "Assignment":
+        st.title("User Dashboard")
+        st.write("Welcome to the user page.")
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({"spec":s,'id':st.session_state['userid']}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values)
+        ins = p.find_one({"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+        if ins is not None:
+            i=ins['instructor']
+            m=retrival(c,i,page)
+
+        uploaded_file = st.file_uploader("Upload a PDF file", type=[])
+        if st.button('upload'):
+            if uploaded_file is not None:
+                file_data = uploaded_file.read()
+                display_pdf(file_data)
+                file_id = fsa.put(file_data, filename=f'{m}.{i}.{uploaded_file.name}.{st.session_state["userid"]}',metadata={'upload_time':datetime.utcnow()})
+                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+    
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc() 
