@@ -3,7 +3,13 @@ from pymongo import MongoClient
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+import re
+from pymongo import MongoClient
 import gridfs
+import base64
+import io
+from datetime import datetime, time
+
 
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
@@ -15,6 +21,7 @@ collection1 = db["Subjects"]
 collection2 = db["Instructor"]
 cust = db["Customer Care"]
 assign=db["assign"]
+sum=db["Summary"]
 m=db["modules"]
 p=db["payment"]
 fs = gridfs.GridFS(db)
@@ -26,6 +33,10 @@ if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["userid"] = ""
     st.session_state["role"] = ""
+if "messages" not in st.session_state:
+        st.session_state.messages = {}  # Store chat history per user
+if "admin_joined" not in st.session_state:
+        st.session_state.admin_joined = {}
 
 
 #Logout Function
@@ -35,41 +46,6 @@ def logout():
     st.session_state["role"] = ""
     st.session_state["rerun"] = True
     st.rerun()
-
-def mainc():
-    st.session_state.notif=[]
-    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
-                   model_name='gpt-4o',
-                   temperature=0.0)
-    prompt_template='''If any actionable prompt is given the state yes else give the response.   
-    Text:
-    {context}'''
-    PROMPT = PromptTemplate(
-    template=prompt_template, input_variables=["context"])
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [{"role": "assistant", "content": "Hello! Welcome to customer care. How Can I help you?"}]
-
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
-
-    if prompt := st.chat_input():
-    
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
-        chain = LLMChain(llm=llm, prompt=PROMPT)
-        answer=chain.run(prompt)
-        if re.search(r'\bYes\b', answer):
-            cust.insert_one({'id':st.session_state["userid"],'query':prompt})
-            st.chat_message("assistant").write("Notified to the Admin, He will get back to you soon...")
-        else:
-            prompt_template='''Accept the queries as a customer care and give an accuarte reply.   
-            Text:
-            {context}'''
-            PROMPT = PromptTemplate(
-            template=prompt_template, input_variables=["context"])
-            chain = LLMChain(llm=llm, prompt=PROMPT).run(prompt)
-            st.session_state.messages.append({"role": "assistant", "content": chain})
-            st.chat_message("assistant").write(chain)
 
 
 #Reg function
@@ -97,7 +73,6 @@ def reg():
             st.session_state["reg_in"] = False
             st.session_state["rerun"] = True
             st.rerun()
-
 
 def display_pdf(pdf_bytes):
     base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
@@ -140,6 +115,7 @@ def retrival(c,i,o):
     if n is not None:
         st.write(n['description'])
     return(selected_filename)
+
 def retrivala(c,i):
     module=[]
     pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
@@ -208,6 +184,7 @@ def retrivala(c,i):
                     st.write('✅Correct')
                 else:
                     st.write('Wrong')
+            
 
 # Login function
 def login():
@@ -217,7 +194,9 @@ def login():
     'Create an Account'
     if st.button('Registration form'):
         st.session_state["reg_in"] = True
-        st.experimental_rerun()
+        st.session_state["rerun"] = True
+        st.rerun()
+
     if st.button("Login"):
             user = collection.find_one({"id": userid})
             if user is not None: 
@@ -232,6 +211,82 @@ def login():
             else:
                     st.error("Invalid Userid")
 
+def moduleview():
+    st.title("📄 Retrieve and Display PDFs from MongoDB")
+
+    # Fetch all stored PDF files
+    pdf_files = list(db.fs.files.find({}, {"filename": 1, "_id": 1}))
+
+    # Dropdown to select a PDF file
+    if pdf_files!=[]:
+        file_options = {file["filename"]: file["_id"] for file in pdf_files}
+        selected_filename = st.selectbox("Select a PDF to View", list(file_options.keys()))
+
+        if st.button("Load PDF"):
+            # Retrieve the PDF file from MongoDB
+            file_id = file_options[selected_filename]
+            pdf_data = fs.get(file_id).read()
+            
+            # Convert to bytes and display
+            st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename, mime="application/pdf")
+            
+            st.write("📄 **PDF Preview:**")
+            st.pdf(io.BytesIO(pdf_data))
+    else:
+        st.write("⚠️ No PDFs found in the database.")
+
+def mainc():
+    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+    prompt_template='''If any actionable prompt is given the state yes else give the response.   
+    Text:
+    {context}'''
+    PROMPT = PromptTemplate(
+    template=prompt_template, input_variables=["context"])
+    
+    i=0
+    if st.session_state['userid'] not in st.session_state['messages']:
+        st.session_state['messages'][st.session_state['userid']] = [{"role": "assistant", "content": "Hello! Welcome to customer care. How Can I help you?"}]
+        st.session_state.admin_joined[st.session_state['userid']] = False
+        i=1    
+    if i==1:
+        st.session_state["messages"].update([i for i in sum.find({})][0])
+        i=0
+    else:
+        st.session_state["messages"]=[i for i in sum.find({})][0]
+
+    for msg in st.session_state.messages[st.session_state['userid']]:
+        print(msg)
+        st.chat_message(msg["role"]).write(msg["content"])
+    
+    if prompt := st.chat_input():
+    
+        st.session_state["messages"][st.session_state['userid']].append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
+        chain = LLMChain(llm=llm, prompt=PROMPT)
+        answer=chain.run(prompt)
+        if re.search(r'\bYes\b', answer):
+            cust.insert_one({'id':st.session_state["userid"],'query':prompt})
+            st.chat_message("assistant").write("Notified to the Admin, He will get back to you soon...")
+            st.session_state.admin_joined[st.session_state['userid']] = True
+            
+            
+        elif not st.session_state.admin_joined[st.session_state['userid']]:
+            prompt_template='''Accept the queries as a customer care and give an accuarte reply.   
+            Text:
+            {context}'''
+            PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context"])
+            chain = LLMChain(llm=llm, prompt=PROMPT).run(prompt)
+            st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
+
+    i=1
+    sum.delete_many({})
+    sum.insert_one(st.session_state["messages"])
+    
+
        
 # Main app interface Student
 def maini():
@@ -244,6 +299,7 @@ def maini():
         documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
         key_values = [doc['course'] for doc in documents if 'course' in doc]
         optionm = st.selectbox("Course",(key_values))
+
     elif page == "Module":
         st.title("Module")
         st.write("Welcome to the Module creation page.")
@@ -297,6 +353,7 @@ def maini():
                         else:
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
                             st.success(f"✅ Uploaded")
+
             if option=='Assesment':
                 m.delete_many({option:"Assesment"})
                 choice = st.selectbox("Type of Question",('Descriptive','MCQ','More than One Answer MCQ','True or False'))
@@ -380,7 +437,7 @@ def maini():
                             else:
                                 m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'ans':an})
                                 st.success(f"✅ Uploaded")
-
+    
     elif page == "view Assignments":
         st.title("view Assignments")
         module=[]
@@ -419,13 +476,11 @@ def maini():
                 display_pdf(pdf_data)
         # Convert to bytes and display
         st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
-                        
 
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc()
 
-    
     if st.button("Logout"):
         logout()
 
@@ -448,6 +503,24 @@ def mains():
             key_values = [doc['course'] for doc in documents if 'course' in doc]
         c = st.selectbox("course",key_values)
         
+    elif page == "Module":
+        st.title("Admin Dashboard")
+        st.write("Welcome to the admin page.")
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({"spec":s,'id':st.session_state['userid']}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values)
+        ins = p.find_one({"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+        if ins is not None:
+            i=ins['instructor']
+            retrival(c,i,'Learning Content')
+
     elif page == "Assignment":
         st.title("User Dashboard")
         st.write("Welcome to the user page.")
@@ -473,7 +546,62 @@ def mains():
                 display_pdf(file_data)
                 file_id = fsa.put(file_data, filename=f'{m}.{i}.{uploaded_file.name}.{st.session_state["userid"]}',metadata={'upload_time':datetime.utcnow()})
                 st.success(f"📁 File saved to MongoDB with ID: {file_id}")
-    
+
+    elif page == "Assesment":
+        st.title("Assesment")
+        st.write("Welcome to the user page.")
+        documents = p.find({}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+        print('documents')
+        print(documents)
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            if key_values != []:
+                c = st.selectbox("course",key_values)
+                ins = p.find_one({"id":st.session_state['userid'],"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+                if ins is not None:
+                    i=ins['instructor']
+                    retrivala(c,i)
+        
+
+    elif page == "Payment":
+        st.title("Payment")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+        if documents is not None:
+            documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            c = st.selectbox("course",key_values[0])
+
+        exist=p.find_one({'course':c})
+        if exist is None:
+            documents = collection2.find({"spec":s,"course":c}, {"Instructor": 1, "_id": 0})
+           
+            key_values = [doc['Instructor'] for doc in documents if 'Instructor' in doc]
+            print('key_values')
+            print(key_values)
+            if key_values != []:
+                ins = st.selectbox("Instructor",key_values[0])
+                if st.button('pay'):
+                    b=collection.find_one({'id':st.session_state['userid']},{"bal":1})
+                    if b['bal']!=0:
+                        i=b['bal']-100
+                        collection.update_one({"id": st.session_state['userid']}, {"$set":{'bal':i}})
+                        p.insert_one({"id":st.session_state['userid'],"spec":s,"course":c,"instructor":ins})
+                        st.success(f"payed successfully, you have {i} balance in your account")
+                    else:
+                        st.error("No enough balance")
+        else:
+            st.warning("Already Payed")
+
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc() 
@@ -481,6 +609,8 @@ def mains():
     if st.button("Logout"):
         logout()
 
+
+# Main app interface Admin
 def maina():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Go to", ["Home Page","Instruct Reg", "Course Reg", "Course View","Course Assign","Assign View","Notification"])
@@ -573,28 +703,13 @@ def maina():
                 collection2.insert_one({'spec':s,'course':c,'Instructor':[i]})
                 st.success(f"New key created, data inserted: {s}")
 
-
-    elif page == "Assign View":
-            st.title("Assign View")
-            st.write("Welcome to the Assign View.")
-            documents = collection1.find({}, {"spec": 1, "_id": 0})
-            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
-            option = st.selectbox("Specialization",(key_values))
-            if option:
-            # Find all documents where the key exists
-                courses = collection2.find({'spec':option})
-                if documents:
-                    st.write(f"Documents with the key '{option}':")
-                    st.dataframe(courses)  # Display documents in a table format
-                else:
-                    st.write(f"No documents found with the key: {option}")
-
     elif page == "Assign View":
         st.title("Assign View")
         st.write("Welcome to the Assign View.")
         documents = collection1.find({}, {"spec": 1, "_id": 0})
-        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
-        option = st.selectbox("Specialization",(key_values))
+        if documents!=[]:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+            option = st.selectbox("Specialization",(key_values))
         if option:
         # Find all documents where the key exists
             courses = collection2.find({'spec':option})
@@ -605,17 +720,40 @@ def maina():
                 st.write(f"No documents found with the key: {option}")
 
     elif page == "Notification":
+        st.session_state["messages"]=[i for i in sum.find({})][0]
         st.title("Customer Service")
+        m=[]
         c=cust.find({},{'query':1,'id':1,'_id':0})
-        print('c')
-        print(c)
-        if c!=[]:
-            i=[i for i in c]
-            print(i)
-            print('i')
-            for j in i:
-                if st.button(f"{j['id']}:{j['query']}"):
-                    cust.delete_one({'id':j['id'],'query':j['query']})
+        if c !=[]:
+            for j in c:
+                    a=f'{j["id"]}.{j["query"]}'
+                    m.append(a)
+            option = st.selectbox("Notifications",(m))
+            
+            if option is not None:
+                o=option.split('.')
+                for msg in st.session_state.messages[o[0]]:
+                    st.chat_message(msg["role"]).write(msg["content"])
+                if prompt := st.chat_input():
+                    st.session_state["messages"][o[0]].append({"role": "admin", "content": prompt})
+                    st.chat_message("admin").write(prompt)
+                if st.button('clear'):
+                    cust.delete_one({'id':o[0],'query':o[1]})
+                    st.session_state.admin_joined[st.session_state['userid']]=False
+                
+                sum.delete_many({})
+                sum.insert_one(st.session_state["messages"])
+                
+    
+        else:
+            st.write('No Notifications')
+
+        
+            
+        
+    if st.button("Logout"):
+        logout()
+
 
 # Control access
 if not st.session_state["reg_in"]:
@@ -630,4 +768,4 @@ if not st.session_state["reg_in"]:
             maini()
 
 else:
-    reg("Student")
+    reg()
