@@ -233,7 +233,35 @@ def maina():
             else:
                 st.write(f"No documents found with the key: {option}")
 
-    
+    elif page == "Course Assign":
+        st.title("Course Registration")
+        st.write("Welcome to the Course page.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+        key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values[0])
+
+        docum = collection.find({"role":"Instructor","spec":s}, {"id": 1, "_id": 0})
+        key_values = [doc['id'] for doc in docum if 'id' in doc]
+        i = st.selectbox("Instructor",(key_values))
+
+        if st.button("Insert"):
+            spec=collection2.find_one({"spec": s,'course':c})
+            if  spec is not None:
+                # Append new values to the existing array
+                a=spec['Instructor']
+                a.append(i)
+                collection2.update_one({"spec": s,'course':c}, {"$set":{'Instructor':a}})
+                st.success(f"Data appended successfully to key: {c}")
+            else:
+                # Create a new document if key does not exist
+                collection2.insert_one({'spec':s,'course':c,'Instructor':[i]})
+                st.success(f"New key created, data inserted: {s}")
+
 
     elif page == "Assign View":
             st.title("Assign View")
@@ -250,7 +278,21 @@ def maina():
                 else:
                     st.write(f"No documents found with the key: {option}")
 
-    
+    elif page == "Assign View":
+        st.title("Assign View")
+        st.write("Welcome to the Assign View.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        option = st.selectbox("Specialization",(key_values))
+        if option:
+        # Find all documents where the key exists
+            courses = collection2.find({'spec':option})
+            if documents:
+                st.write(f"Documents with the key '{option}':")
+                st.dataframe(courses)  # Display documents in a table format
+            else:
+                st.write(f"No documents found with the key: {option}")
+
     elif page == "Notification":
         st.title("Customer Service")
         c=cust.find({},{'query':1,'id':1,'_id':0})
