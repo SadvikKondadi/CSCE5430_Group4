@@ -389,9 +389,10 @@ def maini():
                         an=st.text_input('Ans:')
                     if choice=='More than One Answer MCQ':
                         an=[]
+                        x=[]
                         n=int(st.text_input("No. of options:",4))
                         for i in range(n):
-                            x=st.text_input(f"{i}.")
+                            x[i]=st.text_input(f"{i}.")
                             an.append([x])
 
                     if st.button("Upload"):
