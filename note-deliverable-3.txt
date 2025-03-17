@@ -1,0 +1,9 @@
+This delieverable 3 contains requirements mentioned in deliverable-2 for phase-1 submitted in planning documents directory.
+Then we done with the source code for app.py for all the 7 founctional requirements for phase-1 including testing for them and also updated requirements .txt
+We included Use case diagram, class diagram and sequence diagram for UML design for phase-1
+We also commited inspection-code-Group_4 file which consists entire source code of all the requirements of phase-1 including description.
+And also included User manual to install the code and run the program witgh screen shots and also set of instructions.
+Also defined test cases used for testing of functionalities.
+A peer review of what we discussed and what we implemented and what will be improved in future.
+A member cointribution table
+Updated meeting minutes in meetings.txt
