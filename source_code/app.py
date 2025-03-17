@@ -389,10 +389,9 @@ def maini():
                         an=st.text_input('Ans:')
                     if choice=='More than One Answer MCQ':
                         an=[]
-                        x=[]
                         n=int(st.text_input("No. of options:",4))
                         for i in range(n):
-                            x[i]=st.text_input(f"{i}.")
+                            x=st.text_input(f"{i}.")
                             an.append([x])
 
                     if st.button("Upload"):
@@ -505,8 +504,8 @@ def mains():
         c = st.selectbox("course",key_values)
         
     elif page == "Module":
-        st.title("Admin Dashboard")
-        st.write("Welcome to the admin page.")
+        st.title("Student Dashboard")
+        st.write(f"Welcome to the {st.session_state['userid']} page.")
         documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
         if documents is not None:
             key_values = [doc['spec'] for doc in documents if 'spec' in doc]
@@ -523,8 +522,8 @@ def mains():
             retrival(c,i,'Learning Content')
 
     elif page == "Assignment":
-        st.title("User Dashboard")
-        st.write("Welcome to the user page.")
+        st.title("Student Dashboard")
+        st.write("Welcome to the student page.")
         documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
         if documents is not None:
             key_values = [doc['spec'] for doc in documents if 'spec' in doc]
