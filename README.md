@@ -34,4 +34,4 @@ staff.<br>
 
 <b> Source Code </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/source_code <br> <br>
 <b> Meeting Minutes </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/blob/main/meetings.txt <br> <br>
-<b> Planning Documents </b>: 
+<b> Planning Documents </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/planning%20documents
