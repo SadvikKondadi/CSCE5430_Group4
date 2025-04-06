@@ -33,4 +33,5 @@ staff.<br>
 <b> Version Control Management </b>: Github <b>Project Management </b> <br> <br>
 
 <b> Source Code </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/source_code <br> <br>
-<b> Meeting Minutes </b>: 
+<b> Meeting Minutes </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/blob/main/meetings.txt <br> <br>
+<b> Planning Documents </b>: 
