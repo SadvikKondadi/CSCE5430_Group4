@@ -47,7 +47,9 @@ cd CSCE5430_Group4/source_code
 5. Install Dependencies: <br>
 pip install -r requirements.txt
 6. Run the Program using Streamlit:<br>
+```bash
 streamlit run app.py
+
 7. Access the application at: http://localhost:8501
 
 
