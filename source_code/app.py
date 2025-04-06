@@ -9,7 +9,7 @@ import gridfs
 import base64
 import io
 from datetime import datetime, time
-
+from collections import defaultdict
 
 
 # Simulated user database
@@ -610,7 +610,17 @@ def mains():
                 c = st.selectbox("course",key_values[0])
                 fe=f.find({'spec':s,'course':c},{'instructor': 1, 'vi': 1, 'vs': 1, 'cs': 1, 'vc': 1, 'agm': 1, 'cl':1,'_id':0})
                 
-                
+                ab = defaultdict(lambda: defaultdict(int))
+                for it in fe:
+                    instructor=it['instructor']
+                    for key, value in it.items():
+                        if key != 'instructor':
+                            ab[instructor][key] = 0
+                            if value is True:
+                                ab[instructor][key] += 1
+                pr=pd.DataFrame([{'Instructor':k,'Interactive':v['vi'],'Strict':v['vs'],'high score':v['cs'],'lineant':v['vc'],'grace':v['agm'],'learn':v['cl']} for k, v in ab.items()])
+                st.dataframe(pr)
+
 
     elif page == "Payment":
         st.title("Payment")
