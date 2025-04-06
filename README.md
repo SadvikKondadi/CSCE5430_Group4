@@ -1,5 +1,10 @@
-# CSCE5430_Group4 <br>
-Software Engineering Project<br>
+# Student Learning Management System <br>
+The Student Learning Management System (SLMS) functions as an online platform which
+enhances educational institutions through streamlined course administration alongside
+student enrollment capabilities along with material distribution and academic records
+monitoring characteristics. This system provides distinct functionality to its user roles which
+match the responsibilities of Admins, Instructors and Students as well as Customer Support
+staff.<br>
 app.py : Main python file <br>
 requirement.txt : Text file that consists of Installation Packages <br>
         - streamlit <br>
