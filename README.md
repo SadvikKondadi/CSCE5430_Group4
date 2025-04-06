@@ -25,4 +25,10 @@ staff.<br>
 15. Progress Tracking & Reports <br>
 16.Feedback & Survey System <br>
 17. Customer Care <br>
-18. Notifying Actionablr to Admin <br> 
+18. Notifying Actionablr to Admin <br>
+
+<b> Languages </b>: Python, HTML,CSS, SQL <br>
+<b> Frameworks</b>: StreamLit, MangoDB <br>
+<b> Platform </b>: Trello <br>
+<b> Version Control Management </b>: Github <b>Project Management </b> <br>
+<b> Source Code </b>: 
