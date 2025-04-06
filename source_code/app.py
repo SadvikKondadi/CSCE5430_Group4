@@ -10,6 +10,7 @@ import base64
 import io
 from datetime import datetime, time
 from collections import defaultdict
+import pandas as pd
 
 
 # Simulated user database
@@ -27,6 +28,8 @@ m=db["modules"]
 p=db["payment"]
 fs = gridfs.GridFS(db)
 fsa = gridfs.GridFS(dba)
+carddata=db["card"]
+f=db["Feedback"]
 # Session state initialization
 if "reg_in" not in st.session_state:
     st.session_state["reg_in"] = False
@@ -628,32 +631,42 @@ def mains():
         if documents is not None:
             key_values = [doc['spec'] for doc in documents if 'spec' in doc]
         
-        s = st.selectbox("Specialization",(key_values))
+            s = st.selectbox("Specialization",(key_values))
         if documents is not None:
             documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
             key_values = [doc['course'] for doc in documents if 'course' in doc]
             c = st.selectbox("course",key_values[0])
 
-        exist=p.find_one({'course':c})
+        exist=p.find_one({'course':c,'id':st.session_state['userid']})
         if exist is None:
             documents = collection2.find({"spec":s,"course":c}, {"Instructor": 1, "_id": 0})
            
             key_values = [doc['Instructor'] for doc in documents if 'Instructor' in doc]
-            print('key_values')
-            print(key_values)
+
             if key_values != []:
                 ins = st.selectbox("Instructor",key_values[0])
+                card=st.selectbox("Card",['credit','debit'])
+                cardno=st.text_input('Enter the Card Number')
+                N=st.text_input('Name of the Card Holder')
+                exp=st.text_input('Expiry Date')
+                sc=st.text_input('Security Number')
                 if st.button('pay'):
-                    b=collection.find_one({'id':st.session_state['userid']},{"bal":1})
-                    if b['bal']!=0:
-                        i=b['bal']-100
-                        collection.update_one({"id": st.session_state['userid']}, {"$set":{'bal':i}})
-                        p.insert_one({"id":st.session_state['userid'],"spec":s,"course":c,"instructor":ins})
-                        st.success(f"payed successfully, you have {i} balance in your account")
+
+                    b=carddata.find_one({'CardNo':cardno,'Name':N,'Type':card,'SEC':sc,'Expdate':exp},{"balance":1})
+                    
+                    if b is not None:
+                        if b['balance']>100:
+                            i=b['balance']-100
+                            carddata.update_one({'CardNo':cardno}, {"$set":{'balance':i}})
+                            p.insert_one({"id":st.session_state['userid'],"spec":s,"course":c,"instructor":ins,'m':0})
+                            st.success(f"payed successfully, you have {i} balance in your account")
+                        else:
+                            st.error("No enough balance")
                     else:
-                        st.error("No enough balance")
+                        st.error("Invalid Card Details")
         else:
             st.warning("Already Payed")
+
 
     elif page == "Customer Care":
         st.title("Customer Care")
