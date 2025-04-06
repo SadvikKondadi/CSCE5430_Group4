@@ -623,7 +623,39 @@ def mains():
                 if ins is not None:
                     i=ins['instructor']
                     retrivala(c,i)
+                    
+    elif page=='Feedback':
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
         
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values)
+
+                documents = p.find({'id':st.session_state['userid'],"course":c,"spec":s}, {"instructor": 1, "_id": 0})
+                if documents is not None:
+                    key_values = [doc['instructor'] for doc in documents if 'instructor' in doc]
+                    if key_values != []:
+                        i = st.selectbox("instructor",key_values)
+
+                        documents = p.find({"spec":s,'id':st.session_state['userid'],"course": c})
+                        d=[di for di in f.find({"spec":s,'id':st.session_state['userid'],"course": c})]
+                        if d == []:
+                            if documents is not None:
+                                    a1=st.checkbox("Very Interactive")
+                                    b1=st.checkbox("Very Strict")
+                                    c1=st.checkbox("Can score high")
+                                    d1=st.checkbox("Very lineant in Correction")
+                                    e1=st.checkbox("adds Grace Marks")
+                                    f1=st.checkbox("Can learn a lot")
+                            if st.button('submit'):
+                                f.insert_one({'id':st.session_state['userid'],'spec':s,'course':c,'instructor':i,'vi':a1,'vs':b1,'cs':c1,'vc':d1,'agm':e1,'cl':f1})
+                        else:
+                            st.warning('Already Submitted')
+
     elif page == "Course Recom":
 
         llm=ChatOpenAI(api_key,                            
