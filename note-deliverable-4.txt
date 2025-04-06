@@ -1,0 +1,7 @@
+Deliverable-4 is the Phase-2 of project we submitted the project report includes the functional requirements defined for phase-2.
+We also included UMl diagrams, class and Sequence diagram and Use Case diagrams for the functional requirements.
+Then Test cases like Unit test also included in the reprot for each functionality.
+We submitted usermanual for running and installing the application
+Updated meeting minutes for Deliverable-4 in main branch in meetings.txt file.
+Deliverable-4 report is commited into planning documents of main branch of project.
+Updated entire source-code in app.py in source code directory of main branch.
