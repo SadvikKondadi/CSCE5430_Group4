@@ -3,17 +3,15 @@ from pymongo import MongoClient
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from collections import Counter
 import re
 from pymongo import MongoClient
 import gridfs
 import base64
 import io
-from datetime import datetime, time
+from collections import Counter
 from collections import defaultdict
 import pandas as pd
 import numpy as np
-
 
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
@@ -28,15 +26,14 @@ assign=db["assign"]
 sum=db["Summary"]
 m=db["modules"]
 p=db["payment"]
-fs = gridfs.GridFS(db)
-fsa = gridfs.GridFS(dba)
-carddata=db["card"]
-f=db["Feedback"]
-ass=db["Exam"]
 a=db["Attempt"]
+ass=db["Exam"]
 ab=db["Attendance"]
 ag=db["AgAttendance"]
-
+f=db["Feedback"]
+carddata=db["card"]
+fs = gridfs.GridFS(db)
+fsa = gridfs.GridFS(dba)
 # Session state initialization
 if "reg_in" not in st.session_state:
     st.session_state["reg_in"] = False
@@ -48,7 +45,12 @@ if "messages" not in st.session_state:
         st.session_state.messages = {}  # Store chat history per user
 if "admin_joined" not in st.session_state:
         st.session_state.admin_joined = {}
-
+if 'mar' not in st.session_state:
+    st.session_state.mar=0
+if 'mark' not in st.session_state:
+    st.session_state.mark=0
+if 'exam' not in st.session_state:
+    st.session_state.exam=0
 
 #Logout Function
 def logout():
@@ -76,7 +78,7 @@ def reg():
             st.warning("The UserID already EXIST.")
         else:
             if new_userid and new_password:
-                y={"id":new_userid,"pwd":new_password,"role":'Student',"spec":s,"bal":300}
+                y={"id":new_userid,"pwd":new_password,"role":'Student',"spec":s,"balance":300}
                 collection.insert_one(y)
                 st.success('Registered Sucessfully')
             else:
@@ -98,7 +100,6 @@ def retrival(c,i,o):
     if pdf_files!=[]:
         for file in pdf_files:
             metadata = file.get("metadata", {})
-            print(metadata)
             if metadata['course']==c and metadata['id']==i and metadata['option']==o:
                 module.append(metadata['name'])
     n=m.find({'id':i,'option':o},{"name":1})
@@ -109,13 +110,11 @@ def retrival(c,i,o):
 
     query = {"metadata.name": selected_filename}
     results = list(db.fs.files.find(query, {"metadata": 1}))
-    print('results')
-    print(results)
+    
     if results !=[]:
         st.write(results[0]['metadata']['description'])
         file_id = results[0]['_id']
-        print('p')
-        print(file_id)
+        
         pdf_data = fs.get(file_id)
         if results[0]['metadata']['filename'].split(".")[1]=='pdf':
             display_pdf(pdf_data.read())
@@ -217,7 +216,6 @@ def retrivala(c,ins):
                             st.session_state.mark=0
     else:
         st.warning('Already Answered')
-            
 
 # Login function
 def login():
@@ -269,7 +267,7 @@ def moduleview():
         st.write("⚠️ No PDFs found in the database.")
 
 def mainc():
-    llm=ChatOpenAI(api_key='sk-proj-...',
+    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
     prompt_template='''If any actionable prompt is given the state yes else give the response.   
@@ -290,7 +288,7 @@ def mainc():
         st.session_state["messages"]=[i for i in sum.find({})][0]
 
     for msg in st.session_state.messages[st.session_state['userid']]:
-        print(msg)
+        
         st.chat_message(msg["role"]).write(msg["content"])
     
     if prompt := st.chat_input():
@@ -324,7 +322,7 @@ def mainc():
 # Main app interface Student
 def maini():
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "view Assignments","Customer Care"])
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "view Assignments","Roll Call","View Attendance","Customer Care"])
 
     if page == "Dashboard":
         st.title("Dashboard")
@@ -353,11 +351,7 @@ def maini():
             uploaded_file = st.file_uploader("Upload a PDF file", type=[])
             option = st.selectbox("Module",('Learning Content','Assignment','Assesment'))
             if option=='Learning Content' or option=='Assignment':
-                if option=='Assignment':
-                    'Enter Assignment Deadline'
-                    d=st.date_input("📅Date:",format='MM/DD/YYYY')
-                    t=st.time_input("⏰Time:",value=time(0,0))
-                    dt= datetime.combine(d,t)
+                
                 if st.button("Upload"):
                     if uploaded_file is not None:
                         st.success(f"✅ Uploaded: {uploaded_file.name}")
@@ -376,7 +370,7 @@ def maini():
                                 file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
                                 st.success(f"📁 File saved to MongoDB with ID: {file_id}")
                             else:
-                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
                                 st.success(f"📁 File saved to MongoDB with ID: {file_id}")
 
                     else:
@@ -384,7 +378,7 @@ def maini():
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
                             st.success(f"✅ Uploaded")
                         else:
-                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
                             st.success(f"✅ Uploaded")
 
             if option=='Assesment':
@@ -413,19 +407,19 @@ def maini():
                             st.success(f"✅ Uploaded")
 
                 if choice=='MCQ' or choice=='More than One Answer MCQ':
-                    n=int(st.text_input("No. of options:",4))
+                    n1=int(st.text_input("No. of options:",4))
                     a=[]
-                    for i in range(n):
+                    for i in range(n1):
                         x=st.text_input(f"{i}.")
-                        a.append([x])
+                        a.append(x)
                     if choice=='MCQ':
                         an=st.text_input('Ans:')
                     if choice=='More than One Answer MCQ':
                         an=[]
-                        n=int(st.text_input("No. of options:",4))
-                        for i in range(n):
-                            x=st.text_input(f"{i}.")
-                            an.append([x])
+                        n2=int(st.text_input("No. of answers:",4))
+                        for i in range(n2):
+                            x1=st.text_input(f"{i}.",key=f'ans{i}')
+                            an.append(x1)
 
                     if st.button("Upload"):
                             if uploaded_file is not None:
@@ -491,18 +485,15 @@ def maini():
                 module.append(f['name'])
         selected_filename = st.selectbox("Select module",module)
         pdf_files = dba.fs.files.find({'filename': {"$regex": selected_filename}}, {"filename": 1})
-        print('pdf_files')
-        print(pdf_files)
+        
         
         a=[]
         if pdf_files is not None:
             for i in pdf_files:
-                print(i)
                 a.append(i['filename'])    
         selected_filename = st.selectbox("Select a PDF to View",a)
         file_id = dba.fs.files.find_one({"filename":selected_filename}, {"_id": 1})
-        print('id')
-        print(file_id)
+        
         if file_id is not None:
             pdf_data = fsa.get(file_id['_id']).read()
             if 'pdf' in selected_filename.split('.'):
@@ -532,7 +523,19 @@ def maini():
             att=dict(att_counts)
             att.update({'course':optionm,'instructor':st.session_state['userid']})
             ag.insert_one(att)
-
+    
+    elif page=="View Attendance":
+        st.title("Attendance")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        ma=ag.find({'course':optionm,'instructor':st.session_state['userid']},{'_id':0,'course':0,'instructor':0})
+        for i in ma:
+            print('i')
+            st.write(pd.DataFrame([i]))
+            
+        
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc()
@@ -543,8 +546,7 @@ def maini():
 # Main app interface Instructor
 def mains():
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "Assignment","Assesment","Payment","Customer Care"])
-
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "Assignment","Assesment","Course Recom","Prof Recom","Payment","Feedback","Customer Care"])
     if page == "Dashboard":
         st.title("Home Page")
         st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
@@ -606,15 +608,13 @@ def mains():
     elif page == "Assesment":
         st.title("Assesment")
         st.write("Welcome to the user page.")
-        documents = p.find({}, {"spec": 1, "_id": 0})
+        documents = p.find({'id':st.session_state["userid"]}, {"spec": 1, "_id": 0})
         if documents is not None:
             key_values = [doc['spec'] for doc in documents if 'spec' in doc]
         
         s = st.selectbox("Specialization",(key_values))
 
         documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
-        print('documents')
-        print(documents)
         if documents is not None:
             key_values = [doc['course'] for doc in documents if 'course' in doc]
             if key_values != []:
@@ -623,91 +623,17 @@ def mains():
                 if ins is not None:
                     i=ins['instructor']
                     retrivala(c,i)
-                    
-    elif page=='Feedback':
-        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
-        if documents is not None:
-            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
         
-            s = st.selectbox("Specialization",(key_values))
-            if documents is not None:
-                documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
-                key_values = [doc['course'] for doc in documents if 'course' in doc]
-                c = st.selectbox("course",key_values)
-
-                documents = p.find({'id':st.session_state['userid'],"course":c,"spec":s}, {"instructor": 1, "_id": 0})
-                if documents is not None:
-                    key_values = [doc['instructor'] for doc in documents if 'instructor' in doc]
-                    if key_values != []:
-                        i = st.selectbox("instructor",key_values)
-
-                        documents = p.find({"spec":s,'id':st.session_state['userid'],"course": c})
-                        d=[di for di in f.find({"spec":s,'id':st.session_state['userid'],"course": c})]
-                        if d == []:
-                            if documents is not None:
-                                    a1=st.checkbox("Very Interactive")
-                                    b1=st.checkbox("Very Strict")
-                                    c1=st.checkbox("Can score high")
-                                    d1=st.checkbox("Very lineant in Correction")
-                                    e1=st.checkbox("adds Grace Marks")
-                                    f1=st.checkbox("Can learn a lot")
-                            if st.button('submit'):
-                                f.insert_one({'id':st.session_state['userid'],'spec':s,'course':c,'instructor':i,'vi':a1,'vs':b1,'cs':c1,'vc':d1,'agm':e1,'cl':f1})
-                        else:
-                            st.warning('Already Submitted')
-
-    elif page == "Course Recom":
-
-        llm=ChatOpenAI(api_key,                            
-                   model_name='gpt-4o',
-                   temperature=0.0)
-        if "message" not in st.session_state:
-            st.session_state["message"] = [{"role": "assistant", "content": "Enter your profession to get course recommendations:"}]
-
-        st.title("Course Recommendation System")
-        documents=collection1.find({},{'course':1,'_id':0})
-        key_values = [i for doc in documents for i in doc['course'] if 'course' in doc]
-
-        prompt_template='''Accept prompt as a course recommender in the form of Profession and suggest four from the courses in {key_values}   
-        to be taken to go into the given profession
-        Text:
-        {context}'''
-        PROMPT = PromptTemplate(
-        template=prompt_template, input_variables=["context","key_values"])
-
-        for msg in st.session_state.message:
-            st.chat_message(msg["role"]).write(msg["content"])
-
-        if prompt := st.chat_input():
-            formatted_prompt={"context":prompt, "key_values":", ".join(key_values)}
-            chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
-            st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
-            st.chat_message("assistant").write(chain)
-
-    elif page == "Prof Recom":
-        st.title("Prof Recommendation System")
-        documents = collection1.find({}, {"spec": 1, "_id": 0})
-        
+    elif page=="View Attendance":
+        st.title("Attendance")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
         if documents is not None:
-            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
-            s = st.selectbox("Specialization",(key_values))
-            if documents is not None:
-                documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
-                key_values = [doc['course'] for doc in documents if 'course' in doc]
-                c = st.selectbox("course",key_values[0])
-                fe=f.find({'spec':s,'course':c},{'instructor': 1, 'vi': 1, 'vs': 1, 'cs': 1, 'vc': 1, 'agm': 1, 'cl':1,'_id':0})
-                
-                ab = defaultdict(lambda: defaultdict(int))
-                for it in fe:
-                    instructor=it['instructor']
-                    for key, value in it.items():
-                        if key != 'instructor':
-                            ab[instructor][key] = 0
-                            if value is True:
-                                ab[instructor][key] += 1
-                pr=pd.DataFrame([{'Instructor':k,'Interactive':v['vi'],'Strict':v['vs'],'high score':v['cs'],'lineant':v['vc'],'grace':v['agm'],'learn':v['cl']} for k, v in ab.items()])
-                st.dataframe(pr)
-
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        ma=ag.find({'course':optionm,'instructor':st.session_state['userid']},{'_id':0,'course':0,'instructor':0,f'{st.session_state["userid"]}':1})
+        for i in ma:
+            print('i')
+            st.write(pd.DataFrame([i]))
 
     elif page == "Payment":
         st.title("Payment")
@@ -751,10 +677,95 @@ def mains():
         else:
             st.warning("Already Payed")
 
+    elif page=='Feedback':
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values)
+
+                documents = p.find({'id':st.session_state['userid'],"course":c,"spec":s}, {"instructor": 1, "_id": 0})
+                if documents is not None:
+                    key_values = [doc['instructor'] for doc in documents if 'instructor' in doc]
+                    if key_values != []:
+                        i = st.selectbox("instructor",key_values)
+
+                        documents = p.find({"spec":s,'id':st.session_state['userid'],"course": c})
+                        d=[di for di in f.find({"spec":s,'id':st.session_state['userid'],"course": c})]
+                        if d == []:
+                            if documents is not None:
+                                    a1=st.checkbox("Very Interactive")
+                                    b1=st.checkbox("Very Strict")
+                                    c1=st.checkbox("Can score high")
+                                    d1=st.checkbox("Very lineant in Correction")
+                                    e1=st.checkbox("adds Grace Marks")
+                                    f1=st.checkbox("Can learn a lot")
+                            if st.button('submit'):
+                                f.insert_one({'id':st.session_state['userid'],'spec':s,'course':c,'instructor':i,'vi':a1,'vs':b1,'cs':c1,'vc':d1,'agm':e1,'cl':f1})
+                        else:
+                            st.warning('Already Submitted')
+            
+    elif page == "Course Recom":
+
+        llm=ChatOpenAI(api_key="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",                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+        if "message" not in st.session_state:
+            st.session_state["message"] = [{"role": "assistant", "content": "Enter your profession to get course recommendations:"}]
+
+        st.title("Course Recommendation System")
+        documents=collection1.find({},{'course':1,'_id':0})
+        key_values = [i for doc in documents for i in doc['course'] if 'course' in doc]
+
+        prompt_template='''Accept prompt as a course recommender in the form of Profession and suggest four from the courses in {key_values}   
+        to be taken to go into the given profession
+        Text:
+        {context}'''
+        PROMPT = PromptTemplate(
+        template=prompt_template, input_variables=["context","key_values"])
+        
+        for msg in st.session_state.message:
+            st.chat_message(msg["role"]).write(msg["content"])
+
+        if prompt := st.chat_input():
+            formatted_prompt={"context":prompt, "key_values":", ".join(key_values)}
+            chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
+            st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
+
+        
+    elif page == "Prof Recom":
+        st.title("Prof Recommendation System")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values[0])
+                fe=f.find({'spec':s,'course':c},{'instructor': 1, 'vi': 1, 'vs': 1, 'cs': 1, 'vc': 1, 'agm': 1, 'cl':1,'_id':0})
+                
+                ab = defaultdict(lambda: defaultdict(int))
+                for it in fe:
+                    instructor=it['instructor']
+                    for key, value in it.items():
+                        if key != 'instructor':
+                            ab[instructor][key] = 0
+                            if value is True:
+                                ab[instructor][key] += 1
+                pr=pd.DataFrame([{'Instructor':k,'Interactive':v['vi'],'Strict':v['vs'],'high score':v['cs'],'lineant':v['vc'],'grace':v['agm'],'learn':v['cl']} for k, v in ab.items()])
+                st.dataframe(pr)
 
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc() 
+
 
     if st.button("Logout"):
         logout()
@@ -780,7 +791,7 @@ def maina():
                 st.warning("The UserID already EXIST.")
             else:
                 if new_userid and new_password:
-                    y={"id":new_userid,"pwd":new_password,"role":'Instructor',"spec":s,"bal":300}
+                    y={"id":new_userid,"pwd":new_password,"role":'Instructor',"spec":s,"balance":300}
                     collection.insert_one(y)
                     st.success('Registered Sucessfully')
                 else:
@@ -792,8 +803,7 @@ def maina():
         s=st.text_input("Specialization")
         c=st.text_input("Course")
         exist=list(collection1.find({'spec':s,'course':c}))
-        print('exist')
-        print(exist)
+        
         if st.button("Insert"):
                 if exist ==[]:
                     spec=collection1.find_one({"spec": s})
@@ -863,7 +873,7 @@ def maina():
         if option:
         # Find all documents where the key exists
             courses = collection2.find({'spec':option})
-            if documents:
+            if courses:
                 st.write(f"Documents with the key '{option}':")
                 st.dataframe(courses)  # Display documents in a table format
             else:
