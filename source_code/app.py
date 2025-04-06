@@ -236,7 +236,7 @@ def moduleview():
         st.write("⚠️ No PDFs found in the database.")
 
 def mainc():
-    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
+    llm=ChatOpenAI(api_key='sk-proj-...',
                    model_name='gpt-4o',
                    temperature=0.0)
     prompt_template='''If any actionable prompt is given the state yes else give the response.   
@@ -570,7 +570,7 @@ def mains():
         
     elif page == "Course Recom":
 
-        llm=ChatOpenAI(api_key="sk-proj-...",                            #st.secrets["OPEN_API_KEY"]
+        llm=ChatOpenAI(api_key="sk-proj-...",                            
                    model_name='gpt-4o',
                    temperature=0.0)
         if "message" not in st.session_state:
