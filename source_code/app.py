@@ -570,7 +570,7 @@ def mains():
         
     elif page == "Course Recom":
 
-        llm=ChatOpenAI(api_key="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",                            #st.secrets["OPEN_API_KEY"]
+        llm=ChatOpenAI(api_key="sk-proj-...",                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
         if "message" not in st.session_state:
@@ -586,7 +586,7 @@ def mains():
         {context}'''
         PROMPT = PromptTemplate(
         template=prompt_template, input_variables=["context","key_values"])
-        
+
     elif page == "Payment":
         st.title("Payment")
         documents = collection1.find({}, {"spec": 1, "_id": 0})
