@@ -5,7 +5,9 @@ student enrollment capabilities along with material distribution and academic re
 monitoring characteristics. This system provides distinct functionality to its user roles which
 match the responsibilities of Admins, Instructors and Students as well as Customer Support
 staff.<br>
+
 <b> Key Features <b> <br>
+
 1. User Management <br>
 2. User Profile Update <br>
 3. Course Management <br>
