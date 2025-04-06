@@ -46,11 +46,14 @@ cd CSCE5430_Group4/source_code
 4. Open the Terminal in VS Code <br>
 5. Install Dependencies: <br>
 ```bash
-pip install -r requirements.txt 
+pip install -r requirements.txt
+```
 
-6. Run the Program using Streamlit:<br>
+6.Run the Program using Streamlit:
 ```bash
-streamlit run app.py 
+streamlit run app.py
+```
+
 
 7. Access the application at: http://localhost:8501
 
