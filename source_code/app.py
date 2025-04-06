@@ -291,7 +291,7 @@ def mainc():
 # Main app interface Student
 def maini():
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "view Assignments","Payment","Customer Care"])
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "view Assignments","Customer Care"])
 
     if page == "Dashboard":
         st.title("Dashboard")
@@ -568,7 +568,25 @@ def mains():
                     i=ins['instructor']
                     retrivala(c,i)
         
+    elif page == "Course Recom":
 
+        llm=ChatOpenAI(api_key="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",                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+        if "message" not in st.session_state:
+            st.session_state["message"] = [{"role": "assistant", "content": "Enter your profession to get course recommendations:"}]
+
+        st.title("Course Recommendation System")
+        documents=collection1.find({},{'course':1,'_id':0})
+        key_values = [i for doc in documents for i in doc['course'] if 'course' in doc]
+
+        prompt_template='''Accept prompt as a course recommender in the form of Profession and suggest four from the courses in {key_values}   
+        to be taken to go into the given profession
+        Text:
+        {context}'''
+        PROMPT = PromptTemplate(
+        template=prompt_template, input_variables=["context","key_values"])
+        
     elif page == "Payment":
         st.title("Payment")
         documents = collection1.find({}, {"spec": 1, "_id": 0})
