@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from collections import Counter
 import re
 from pymongo import MongoClient
 import gridfs
@@ -33,6 +34,8 @@ carddata=db["card"]
 f=db["Feedback"]
 ass=db["Exam"]
 a=db["Attempt"]
+ab=db["Attendance"]
+ag=db["AgAttendance"]
 
 # Session state initialization
 if "reg_in" not in st.session_state:
@@ -507,6 +510,29 @@ def maini():
         # Convert to bytes and display
         st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
 
+    elif page == "Roll Call":
+        st.title("Roll Call")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        ma=p.find({'course':optionm,'instructor':st.session_state['userid']},{'_id':0,'id':1})
+        r=[]
+        for i in ma:
+            id=st.checkbox(i['id'])
+            if id==True:
+                r.append(i['id'])
+        if st.button('Submit'):
+            ab.insert_one({'course':optionm,'instructor':st.session_state['userid'],'att':r})
+            if ag.find({}) is not None:
+                ag.delete_many({})
+            data=list(ab.find({},{'_id':0,'att':1}))
+            all_att = [course for doc in data for course in doc["att"]]
+            att_counts = Counter(all_att)
+            att=dict(att_counts)
+            att.update({'course':optionm,'instructor':st.session_state['userid']})
+            ag.insert_one(att)
+
     elif page == "Customer Care":
         st.title("Customer Care")
         mainc()
@@ -574,7 +600,7 @@ def mains():
             if uploaded_file is not None:
                 file_data = uploaded_file.read()
                 display_pdf(file_data)
-                file_id = fsa.put(file_data, filename=f'{m}.{i}.{uploaded_file.name}.{st.session_state["userid"]}',metadata={'upload_time':datetime.utcnow()})
+                file_id = fsa.put(file_data, filename=f'{m}.{i}.{uploaded_file.name}.{st.session_state["userid"]}')
                 st.success(f"📁 File saved to MongoDB with ID: {file_id}")
 
     elif page == "Assesment":
