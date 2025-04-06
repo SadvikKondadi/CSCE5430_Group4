@@ -34,4 +34,21 @@ staff.<br>
 
 <b> Source Code </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/source_code <br> <br>
 <b> Meeting Minutes </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/blob/main/meetings.txt <br> <br>
-<b> Planning Documents </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/planning%20documents
+<b> Planning Documents </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/planning%20documents <br> <br> 
+
+# Compile and Run the Program <br> 
+# Prerequisites <br>
+1. Clone the repository or download app.py and dependencies:<br>
+git clone https://github.com/SadvikKondadi/CSCE5430_Group4.git <br> 
+2. Navigate to the Project directory: <br>
+cd CSCE5430_Group4/source_code
+3. Open Project in VS Code <br>
+4. Open the Terminal in VS Code <br>
+5. Install Dependencies: <br>
+pip install -r requirements.txt
+6. Run the Program using Streamlit:<br>
+streamlit run app.py
+7. Access the application at: http://localhost:8501
+
+
+
