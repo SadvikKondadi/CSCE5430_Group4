@@ -11,6 +11,7 @@ import io
 from datetime import datetime, time
 from collections import defaultdict
 import pandas as pd
+import numpy as np
 
 
 # Simulated user database
@@ -30,6 +31,9 @@ fs = gridfs.GridFS(db)
 fsa = gridfs.GridFS(dba)
 carddata=db["card"]
 f=db["Feedback"]
+ass=db["Exam"]
+a=db["Attempt"]
+
 # Session state initialization
 if "reg_in" not in st.session_state:
     st.session_state["reg_in"] = False
@@ -120,74 +124,96 @@ def retrival(c,i,o):
         st.write(n['description'])
     return(selected_filename)
 
-def retrivala(c,i):
+def retrivala(c,ins):
     module=[]
     pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
     if pdf_files!=[]:
         for file in pdf_files:
             metadata = file.get("metadata", {})
-            if metadata['course']==c and metadata['id']==i and metadata['option']=='Assesment':
+            if metadata['course']==c and metadata['id']==ins and metadata['option']=='Assesment':
                 module.append(metadata['name'])
     
-    n=m.find({'id':i,'option':'Assesment'},{"name":1})
+    n=m.find({'id':ins,'option':'Assesment'},{"name":1})
     
     if n is not None:
         for f in n:
             module.append(f['name'])
         selected_filename = st.selectbox("Select a PDF to View",module)
-
-    query = {"metadata.name": selected_filename}
-    results = list(db.fs.files.find(query, {"metadata": 1}))
-    if results!=[]:
-        # Dropdown to select a PDF file
-        # Retrieve the PDF file from MongoDB
-        file_id = results[0]['_id']
-        pdf_data = fs.get(file_id).read()
-        if results[0]['filename'].split(".")[1]=='pdf':
-            display_pdf(pdf_data.read())
-        # Convert to bytes and display
-        st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
-        print('r')
-        print(results)
-        if results[0]['choice']=='Descriptive':
-            st.write(results[0]['metadata']['description'])
-            ans=st.text_area('Enter the Answer')
-
-        if results[0]['choice']=='MCQ':
-            ans=st.radio(results[0]['metadata']['description'],[results[0]['metadata']['a']])
-
-        if results[0]['choice']=='More than One Answer MCQ':
-            ans=[]
-            for i in results[0]['metadata']['a']:
-                ci=st.checkbox(i)
-            ans.append(ci)
-
-        if results[0]['choice']=='True or False':
-            ans=st.radio(results[0]['metadata']['description'],[True,False])
-
-        assign.insert_one({'course':c,'ins':i,'mod':selected_filename,'ans':ans})
         
-    n=m.find_one({"name":selected_filename})
-    if n is not None:
-        if n['option']=='Assesment':
-            if n['choice']=='Descriptive':
-                st.write(n['description'])
+    if a.find_one({'course':c,'ins':ins,'mod':selected_filename,'id':st.session_state['userid']}) is None:
+        
+        query = {"metadata.name": selected_filename}
+        results = list(db.fs.files.find(query, {"metadata": 1}))
+        if results!=[]:
+            # Dropdown to select a PDF file
+            # Retrieve the PDF file from MongoDB
+            file_id = results[0]['_id']
+            pdf_data = fs.get(file_id).read()
+            if results[0]['filename'].split(".")[1]=='pdf':
+                display_pdf(pdf_data.read())
+            # Convert to bytes and display
+            st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
+            
+            if results[0]['choice']=='Descriptive':
+                st.write(results[0]['metadata']['description'])
                 ans=st.text_area('Enter the Answer')
-            if n['choice']=='MCQ':
-                ans=st.radio(n['description'],n['a'])
-            if n['choice']=='More than One Answer MCQ':
-                ans=[]
-                for i in n['a']:
-                    ci=st.checkbox(i)
-                ans.append(ci)
-            if n['choice']=='True or False':
-                ans=st.radio(n['description'],['True','False'])
 
-            if st.button('submit'):
-                if ans==n['ans']:
-                    st.write('✅Correct')
-                else:
-                    st.write('Wrong')
+            if results[0]['choice']=='MCQ':
+                np.random.shuffle(results[0]['metadata']['a'])
+                ans=st.radio(results[0]['metadata']['description'],[results[0]['metadata']['a']])
+
+            if results[0]['choice']=='More than One Answer MCQ':
+                ans=[]
+                np.random.shuffle(results[0]['metadata']['a'])
+                for i in results[0]['metadata']['a']:
+                    ci=st.checkbox(i)
+                    if ci==True:
+                        ans.append(i)
+
+            if results[0]['choice']=='True or False':
+                ans=st.radio(results[0]['metadata']['description'],[True,False])
+            
+        n=m.find_one({"name":selected_filename})
+        if n is not None:
+            if n['option']=='Assesment':
+                if n['choice']=='Descriptive':
+                    st.write(n['description'])
+                    ans=st.text_area('Enter the Answer')
+                if n['choice']=='MCQ':
+                    np.random.shuffle(n['a'])
+                    ans=st.radio(n['description'],n['a'])
+                if n['choice']=='More than One Answer MCQ':
+                    ans=[]
+                    np.random.shuffle(n['a'])
+                    for i in n['a']:
+                        ci=st.checkbox(i)
+                        if ci:
+                            ans.append(i)
+                if n['choice']=='True or False':
+                    ans=st.radio(n['description'],['True','False'])
+
+                if st.button('submit'):
+                    a.insert_one({'course':c,'ins':ins,'mod':selected_filename,'id':st.session_state['userid']})
+                    st.session_state.mark=st.session_state.mark+1
+
+                    if ans==n['ans']:
+                        
+                        st.session_state.mar=st.session_state.mar+1
+
+                        st.success(f'✅Correct Score:{st.session_state.mar}')
+                    else:
+                        st.write('Wrong')
+                        if st.session_state.mark==len(module):
+                            st.title(f'Total Score: {st.session_state.mar}')
+                            ma=p.find_one({'course':c,'instructor':ins},{'_id':0,'m':1})
+                            marks=st.session_state.mar+ma['m']
+                            st.session_state.exam=st.session_state.exam+1
+                            ass.insert_one({'Exam':f'Exam{st.session_state.exam}','course':c,'instructor':ins,'Marks':st.session_state.mar})
+                            p.update_one({'course':c,'instructor':ins},{'$set':{'m':marks}})
+                            st.session_state.mar=0
+                            st.session_state.mark=0
+    else:
+        st.warning('Already Answered')
             
 
 # Login function
