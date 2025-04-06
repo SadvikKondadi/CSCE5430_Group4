@@ -11,6 +11,7 @@ import io
 from datetime import datetime, time
 
 
+
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
 
@@ -595,6 +596,21 @@ def mains():
             chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
             st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
             st.chat_message("assistant").write(chain)
+
+    elif page == "Prof Recom":
+        st.title("Prof Recommendation System")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values[0])
+                fe=f.find({'spec':s,'course':c},{'instructor': 1, 'vi': 1, 'vs': 1, 'cs': 1, 'vc': 1, 'agm': 1, 'cl':1,'_id':0})
+                
+                
 
     elif page == "Payment":
         st.title("Payment")
