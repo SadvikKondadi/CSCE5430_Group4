@@ -30,5 +30,7 @@ staff.<br>
 <b> Languages </b>: Python, HTML,CSS, SQL <br>
 <b> Frameworks</b>: StreamLit, MangoDB <br>
 <b> Platform </b>: Trello <br>
-<b> Version Control Management </b>: Github <b>Project Management </b> <br>
-<b> Source Code </b>: 
+<b> Version Control Management </b>: Github <b>Project Management </b> <br> <br>
+
+<b> Source Code </b>: https://github.com/SadvikKondadi/CSCE5430_Group4/tree/main/source_code <br> <br>
+<b> Meeting Minutes </b>: 
