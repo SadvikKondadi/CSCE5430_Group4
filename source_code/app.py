@@ -570,7 +570,7 @@ def mains():
         
     elif page == "Course Recom":
 
-        llm=ChatOpenAI(api_key="sk-proj-...",                            
+        llm=ChatOpenAI(api_key="...",                            
                    model_name='gpt-4o',
                    temperature=0.0)
         if "message" not in st.session_state:
