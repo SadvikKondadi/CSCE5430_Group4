@@ -5,7 +5,7 @@ student enrollment capabilities along with material distribution and academic re
 monitoring characteristics. This system provides distinct functionality to its user roles which
 match the responsibilities of Admins, Instructors and Students as well as Customer Support
 staff.<br>
-app.py : Main python file <br>
+<b>Key Features<b> <br>
 requirement.txt : Text file that consists of Installation Packages <br>
         - streamlit <br>
         - pymongo <br>
