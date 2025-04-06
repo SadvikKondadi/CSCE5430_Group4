@@ -39,9 +39,13 @@ staff.<br>
 # Compile and Run the Program <br> 
 # Prerequisites <br>
 1. Clone the repository or download app.py and dependencies:<br>
-git clone https://github.com/SadvikKondadi/CSCE5430_Group4.git <br> 
+```bash
+git clone https://github.com/SadvikKondadi/CSCE5430_Group4.git
+```
 2. Navigate to the Project directory: <br>
+```bash
 cd CSCE5430_Group4/source_code
+```
 3. Open Project in VS Code <br>
 4. Open the Terminal in VS Code <br>
 5. Install Dependencies: <br>
