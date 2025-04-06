@@ -6,7 +6,7 @@ monitoring characteristics. This system provides distinct functionality to its u
 match the responsibilities of Admins, Instructors and Students as well as Customer Support
 staff.<br>
 
-<b> Key Features <b> <br>
+<b> Key Features </b> <br> <br>
 
 1. User Management <br>
 2. User Profile Update <br>
