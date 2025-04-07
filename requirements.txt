@@ -5,4 +5,4 @@ langchain
 streamlit
 pybase64
 datetime
-
+dotenv
