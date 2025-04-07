@@ -732,11 +732,12 @@ def mains():
             st.chat_message(msg["role"]).write(msg["content"])
 
         if prompt := st.chat_input():
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.chat_message("user").write(prompt)
             formatted_prompt={"context":prompt, "key_values":", ".join(key_values)}
             chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
-            st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
-            st.chat_message("assistant").write(chain)
-
+            st.session_state.messages.append({"role": "assistant", "content": answer})
+            st.chat_message("assistant").write(answer)
         
     elif page == "Prof Recom":
         st.title("Prof Recommendation System")
