@@ -727,7 +727,8 @@ def mains():
         {context}'''
         PROMPT = PromptTemplate(
         template=prompt_template, input_variables=["context","key_values"])
-        
+
+        answer='Enter the profession to take the regarding courses'
         st.session_state.ms.append({"role": "assistant", "content": answer})
         st.chat_message("assistant").write(answer)
         
@@ -736,8 +737,8 @@ def mains():
             st.chat_message("user").write(prompt)
             formatted_prompt={"context":prompt, "key_values":", ".join(key_values)}
             chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
-            st.session_state.ms.append({"role": "assistant", "content": answer})
-            st.chat_message("assistant").write(answer)
+            st.session_state.ms.append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
         
     elif page == "Prof Recom":
         st.title("Prof Recommendation System")
