@@ -13,6 +13,7 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 import os
+from dotenv import dotenv_values
 
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
