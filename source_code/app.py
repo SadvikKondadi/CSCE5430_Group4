@@ -12,10 +12,13 @@ from collections import Counter
 from collections import defaultdict
 import pandas as pd
 import numpy as np
+import os
 
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
 
+config = dotenv_values("keys.env")
+os.environ['OPENAI_API_KEY'] = st.secrets["OPENAI_API_KEY"]
 db = client["slms"]
 dba=client['assign']
 collection = db["slms"]
@@ -267,6 +270,7 @@ def moduleview():
         st.write("⚠️ No PDFs found in the database.")
 
 def mainc():
+    
     llm=ChatOpenAI(api_key=st.secrets["OPENAI_API_KEY"],                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
