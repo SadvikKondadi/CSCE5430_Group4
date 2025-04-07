@@ -546,7 +546,7 @@ def maini():
 # Main app interface Instructor
 def mains():
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "Assignment","Assesment","Course Recom","Prof Recom","Payment","Feedback","Customer Care"])
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "Assignment","Assesment","View Attendance","Course Recom","Prof Recom","Payment","Feedback","Customer Care"])
     if page == "Dashboard":
         st.title("Home Page")
         st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
