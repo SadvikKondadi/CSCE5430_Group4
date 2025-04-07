@@ -12,14 +12,10 @@ from collections import Counter
 from collections import defaultdict
 import pandas as pd
 import numpy as np
-import os
-from dotenv import dotenv_values
 
 # Simulated user database
 client = MongoClient('mongodb+srv://krrish852456:krrish852456@cluster0.99khz.mongodb.net/?retryWrites=true&w=majority&appid=Cluster0')
 
-config = dotenv_values("keys.env")
-os.environ['OPENAI_API_KEY'] = st.secrets["OPENAI_API_KEY"]
 db = client["slms"]
 dba=client['assign']
 collection = db["slms"]
@@ -156,9 +152,12 @@ def retrivala(c,ins):
             file_id = results[0]['_id']
             pdf_data = fs.get(file_id).read()
             if results[0]['filename'].split(".")[1]=='pdf':
-                display_pdf(pdf_data.read())
+                
+                #display_pdf(pdf_data.read())
+                st.warning("Please don't upload PDF file. The PDF file viwer is not working on Cloud.")
             # Convert to bytes and display
-            st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
+            else:
+                st.download_button(label="Download", data=pdf_data, file_name=selected_filename)
             
             if results[0]['choice']=='Descriptive':
                 st.write(results[0]['metadata']['description'])
@@ -271,8 +270,7 @@ def moduleview():
         st.write("⚠️ No PDFs found in the database.")
 
 def mainc():
-    
-    llm=ChatOpenAI(api_key=st.secrets["OPENAI_API_KEY"],                            #st.secrets["OPEN_API_KEY"]
+    llm=ChatOpenAI(api_key='sk-proj-...',                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
     prompt_template='''If any actionable prompt is given the state yes else give the response.   
@@ -358,6 +356,7 @@ def maini():
             if option=='Learning Content' or option=='Assignment':
                 
                 if st.button("Upload"):
+                    
                     if uploaded_file.name.split('.')[1]=='pdf':
                         st.warning("Please don't upload PDF file. The PDF file viwer is not working on Cloud.")
                     else:
@@ -381,14 +380,7 @@ def maini():
                                     file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
                                     st.success(f"📁 File saved to MongoDB with ID: {file_id}")
                     
-                    else:
-                        if option=='Learning Content':
-                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
-                            st.success(f"✅ Uploaded")
-                        else:
-                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
-                            st.success(f"✅ Uploaded")
-
+                        
             if option=='Assesment':
                 m.delete_many({option:"Assesment"})
                 choice = st.selectbox("Type of Question",('Descriptive','MCQ','More than One Answer MCQ','True or False'))
@@ -719,7 +711,7 @@ def mains():
             
     elif page == "Course Recom":
 
-        llm=ChatOpenAI(api_key=st.secrets["OPENAI_API_KEY"],                            #st.secrets["OPEN_API_KEY"]
+        llm=ChatOpenAI(api_key="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",                            #st.secrets["OPEN_API_KEY"]
                    model_name='gpt-4o',
                    temperature=0.0)
         if "message" not in st.session_state:
