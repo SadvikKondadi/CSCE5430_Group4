@@ -358,26 +358,29 @@ def maini():
             if option=='Learning Content' or option=='Assignment':
                 
                 if st.button("Upload"):
-                    if uploaded_file is not None:
-                        st.success(f"✅ Uploaded: {uploaded_file.name}")
-
-                        # Convert file to binary for MongoDB storage
-                        file_data = uploaded_file.read()
-                        
-                        # Check if file already exists in MongoDB
-                        existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
-                        
-                        if existing_file:
-                            st.warning("⚠️ File already exists in MongoDB.")
-                        else:
-                            # Store file in GridFS
-                            if option=='Learning Content':
-                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
-                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+                    if uploaded_file.name.split('.')[1]=='pdf':
+                        st.warning("Please don't upload PDF file. The PDF file viwer is not working on Cloud.")
+                    else:
+                        if uploaded_file is not None:
+                            st.success(f"✅ Uploaded: {uploaded_file.name}")
+    
+                            # Convert file to binary for MongoDB storage
+                            file_data = uploaded_file.read()
+                            
+                            # Check if file already exists in MongoDB
+                            existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                            
+                            if existing_file:
+                                st.warning("⚠️ File already exists in MongoDB.")
                             else:
-                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
-                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
-
+                                # Store file in GridFS
+                                if option=='Learning Content':
+                                    file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
+                                    st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+                                else:
+                                    file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'dead':dt})
+                                    st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+                    
                     else:
                         if option=='Learning Content':
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
