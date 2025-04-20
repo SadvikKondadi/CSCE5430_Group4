@@ -276,6 +276,7 @@ def retrivala(c,ins):
     else:
         st.warning('Already Answered')
 
+# Login function
 def login():
     st.title("Login Page")
     userid = st.text_input("Userid")
@@ -438,6 +439,7 @@ def maini():
                         else:
                             m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
                             st.success(f"✅ Uploaded")
+
             if option=='Assesment':
                 m.delete_many({option:"Assesment"})
                 choice = st.selectbox("Type of Question",('Descriptive','MCQ','More than One Answer MCQ','True or False'))
@@ -526,7 +528,7 @@ def maini():
                             else:
                                 m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'ans':an,'tmark':mar})
                                 st.success(f"✅ Uploaded")
-
+    
     elif page == "view Assignments":
         st.title("view Assignments")
         module=[]
@@ -587,7 +589,7 @@ def maini():
             atd={k: (v / st.session_state.call)*100 for k, v in att.items()}
             atd.update({'course':optionm,'instructor':st.session_state['userid']})
             ag.insert_one(atd)
-
+    
     elif page=="View Attendance":
         st.title("Attendance")
         documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
@@ -622,3 +624,413 @@ def maini():
 
     if st.button("Logout"):
         logout()
+
+# Main app interface Instructor
+def mains():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "Assignment","Assesment","Course Recom","Prof Recom","Payment","Feedback","View Grades","Customer Care"])
+    if page == "Dashboard":
+        st.title("Home Page")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values)
+        
+    elif page == "Module":
+        st.title("Student Dashboard")
+        st.write(f"Welcome to the {st.session_state['userid']} page.")
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({"spec":s,'id':st.session_state['userid']}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values)
+        ins = p.find_one({"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+        if ins is not None:
+            i=ins['instructor']
+            retrival(c,i,'Learning Content')
+
+    elif page == "Assignment":
+        st.title("Student Dashboard")
+        st.write("Welcome to the student page.")
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({"spec":s,'id':st.session_state['userid']}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values)
+        ins = p.find_one({"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+        if ins is not None:
+            i=ins['instructor']
+            mas=retrival(c,i,page)
+
+        uploaded_file = st.file_uploader("Upload a PDF file", type=[])
+        if st.button('upload'):
+            if uploaded_file is not None:
+                file_data = uploaded_file.read()
+                display_pdf(file_data)
+                file_id = fsa.put(file_data, filename=f'{mas}.{i}.{uploaded_file.name}.{st.session_state["userid"]}')
+                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+    elif page == "Assesment":
+        st.title("Assesment")
+        st.write("Welcome to the user page.")
+        documents = p.find({'id':st.session_state["userid"]}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            if key_values != []:
+                c = st.selectbox("course",key_values)
+                ins = p.find_one({"id":st.session_state['userid'],"spec":s,'course':c}, {"instructor": 1, "_id": 0})
+                if ins is not None:
+                    i=ins['instructor']
+                    retrivala(c,i)
+        
+    elif page=="View Grades":
+        st.title("Grades")
+        documents = p.find({'id':st.session_state["userid"]}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            if key_values != []:
+                c = st.selectbox("course",key_values)
+                a=list(ass.find({'course':c,'student':st.session_state["userid"]},{'Exam':1,'_id':0,'Marks':1}))
+                am=list(p.find({'id':st.session_state["userid"],'spec':s,'course':c},{"_id":0,'m':1}))
+                im=list(p.find({'id':st.session_state["userid"],'spec':s,'course':c},{"_id":0,'instructor':1}))
+                tm=list(m.find({'id':im[0]['instructor'],'option':'Assesment','course':c},{'_id':0,'tmark':1}))
+                fg=[i['tmark'] for i in tm]
+                sum=0
+                for i in fg:
+                    sum=sum+i
+
+                for i in a:
+                    st.write(f'{i["Exam"]}: {i["Marks"]}')
+
+                st.write(f'Total:{(am[0]["m"]/sum)*100}%')
+                ma=ag.find({'course':c})
+                for i in ma:
+                    st.write(f'Attendance:{i[st.session_state["userid"]]}%')
+
+        
+
+    elif page == "Payment":
+        st.title("Payment")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+            s = st.selectbox("Specialization",(key_values))
+        if documents is not None:
+            documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            c = st.selectbox("course",key_values[0])
+
+        exist=p.find_one({'course':c,'id':st.session_state['userid']})
+        if exist is None:
+            documents = collection2.find({"spec":s,"course":c}, {"Instructor": 1, "_id": 0})
+           
+            key_values = [doc['Instructor'] for doc in documents if 'Instructor' in doc]
+
+            if key_values != []:
+                ins = st.selectbox("Instructor",key_values[0])
+                card=st.selectbox("Card",['credit','debit'])
+                cardno=st.text_input('Enter the Card Number')
+                N=st.text_input('Name of the Card Holder')
+                exp=st.text_input('Expiry Date')
+                sc=st.text_input('Security Number')
+                if st.button('pay'):
+
+                    b=carddata.find_one({'CardNo':cardno,'Name':N,'Type':card,'SEC':sc,'Expdate':exp},{"balance":1})
+                    
+                    if b is not None:
+                        if b['balance']>100:
+                            i=b['balance']-100
+                            carddata.update_one({'CardNo':cardno}, {"$set":{'balance':i}})
+                            p.insert_one({"id":st.session_state['userid'],"spec":s,"course":c,"instructor":ins,'m':0})
+                            st.success(f"payed successfully, you have {i} balance in your account")
+                        else:
+                            st.error("No enough balance")
+                    else:
+                        st.error("Invalid Card Details")
+        else:
+            st.warning("Already Payed")
+
+    elif page=='Feedback':
+        documents = p.find({'id':st.session_state['userid']}, {"spec": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = p.find({'id':st.session_state['userid'],"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values)
+
+                documents = p.find({'id':st.session_state['userid'],"course":c,"spec":s}, {"instructor": 1, "_id": 0})
+                if documents is not None:
+                    key_values = [doc['instructor'] for doc in documents if 'instructor' in doc]
+                    if key_values != []:
+                        i = st.selectbox("instructor",key_values)
+
+                        documents = p.find({"spec":s,'id':st.session_state['userid'],"course": c})
+                        d=[di for di in f.find({"spec":s,'id':st.session_state['userid'],"course": c})]
+                        if d == []:
+                            if documents is not None:
+                                    a1=st.checkbox("Very Interactive")
+                                    b1=st.checkbox("Very Strict")
+                                    c1=st.checkbox("Can score high")
+                                    d1=st.checkbox("Very lineant in Correction")
+                                    e1=st.checkbox("adds Grace Marks")
+                                    f1=st.checkbox("Can learn a lot")
+                            if st.button('submit'):
+                                f.insert_one({'id':st.session_state['userid'],'spec':s,'course':c,'instructor':i,'vi':a1,'vs':b1,'cs':c1,'vc':d1,'agm':e1,'cl':f1})
+                        else:
+                            st.warning('Already Submitted')
+            
+    elif page == "Course Recom":
+
+        llm=ChatOpenAI(api_key=st.secrets["OPENAI_API_KEY"],                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+        
+        st.title("Course Recommendation System")
+        documents=collection1.find({},{'course':1,'_id':0})
+        key_values = [i for doc in documents for i in doc['course'] if 'course' in doc]
+
+        prompt_template='''Accept prompt as a course recommender in the form of Profession and suggest four from the courses in {key_values}   
+        to be taken to go into the given profession
+        Text:
+        {context}'''
+        PROMPT = PromptTemplate(
+        template=prompt_template, input_variables=["context","key_values"])
+
+        answer='Enter the profession to take the regarding courses'
+        st.session_state.ms.append({"role": "assistant", "content": answer})
+        st.chat_message("assistant").write(answer)
+        
+        if prompt := st.chat_input():
+            st.session_state.ms.append({"role": "user", "content": prompt})
+            st.chat_message("user").write(prompt)
+            formatted_prompt={"context":prompt, "key_values":", ".join(key_values)}
+            chain = LLMChain(llm=llm, prompt=PROMPT).run(formatted_prompt)
+            st.session_state.ms.append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
+        
+    elif page == "Prof Recom":
+        st.title("Prof Recommendation System")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        
+        if documents is not None:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+            s = st.selectbox("Specialization",(key_values))
+            if documents is not None:
+                documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+                key_values = [doc['course'] for doc in documents if 'course' in doc]
+                c = st.selectbox("course",key_values[0])
+                fe=f.find({'spec':s,'course':c},{'instructor': 1, 'vi': 1, 'vs': 1, 'cs': 1, 'vc': 1, 'agm': 1, 'cl':1,'_id':0})
+                
+                ab = defaultdict(lambda: defaultdict(int))
+                for it in fe:
+                    instructor=it['instructor']
+                    for key, value in it.items():
+                        if key != 'instructor':
+                            ab[instructor][key] = 0
+                            if value is True:
+                                ab[instructor][key] += 1
+                pr=pd.DataFrame([{'Instructor':k,'Interactive':v['vi'],'Strict':v['vs'],'high score':v['cs'],'lineant':v['vc'],'grace':v['agm'],'learn':v['cl']} for k, v in ab.items()])
+                st.dataframe(pr)
+
+    elif page == "Customer Care":
+        st.title("Customer Care")
+        mainc() 
+
+
+    if st.button("Logout"):
+        logout()
+
+
+
+
+# Main app interface Admin
+def maina():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Home Page","Instruct Reg", "Course Reg", "Course View","Course Assign","Assign View","Notification"])
+    
+    if page == "Home Page":
+        st.title("Home Page")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+
+    elif page == "Instruct Reg":
+        st.title("Instructor Registration")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        new_userid = st.text_input("New Userid")
+        new_password = st.text_input("New Password", type="password")
+        s=st.text_input("Specialization")
+        if st.button("Register"):
+            if collection.find_one({"id": new_userid}) is not None:
+                st.warning("The UserID already EXIST.")
+            else:
+                if new_userid and new_password:
+                    y={"id":new_userid,"pwd":new_password,"role":'Instructor',"spec":s,"balance":300}
+                    collection.insert_one(y)
+                    st.success('Registered Sucessfully')
+                else:
+                    st.warning("Please enter both userid and password.")
+
+    elif page == "Course Reg":
+        st.title("Course Registration")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        s=st.text_input("Specialization")
+        c=st.text_input("Course")
+        exist=list(collection1.find({'spec':s,'course':c}))
+        
+        if st.button("Insert"):
+                if exist ==[]:
+                    spec=collection1.find_one({"spec": s})
+                    if spec is not None:
+                        a=spec['course']
+                        a.append(c)
+                        collection1.update_one({"spec": s}, {"$set":{'course':a}})
+                        st.success(f"Data appended successfully to key: {c}")
+                    else:
+                        # Create a new document if key does not exist
+                            collection1.insert_one({'spec':s,'course':[c]})
+                            st.success(f"New key created, data inserted: {s}")
+                else:
+                        st.warning("The Subject Already Exist")
+
+    elif page == "Course View":
+        st.title("Course View")
+        st.write("Welcome to the Course View.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        option = st.selectbox("Specialization",(key_values))
+        if option:
+        # Find all documents where the key exists
+            courses = collection1.find({'spec':option})
+            if documents:
+                st.write(f"Documents with the key '{option}':")
+                st.dataframe(courses)  # Display documents in a table format
+            else:
+                st.write(f"No documents found with the key: {option}")
+
+    elif page == "Course Assign":
+        st.title("Course Registration")
+        st.write("Welcome to the Course page.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+        
+        s = st.selectbox("Specialization",(key_values))
+
+        documents = collection1.find({"spec":s}, {"course": 1, "_id": 0})
+        key_values = [doc['course'] for doc in documents if 'course' in doc]
+        c = st.selectbox("course",key_values[0])
+
+        docum = collection.find({"role":"Instructor","spec":s}, {"id": 1, "_id": 0})
+        key_values = [doc['id'] for doc in docum if 'id' in doc]
+        i = st.selectbox("Instructor",(key_values))
+
+        if st.button("Insert"):
+            spec=collection2.find_one({"spec": s,'course':c})
+            if  spec is not None:
+                # Append new values to the existing array
+                a=spec['Instructor']
+                a.append(i)
+                collection2.update_one({"spec": s,'course':c}, {"$set":{'Instructor':a}})
+                st.success(f"Data appended successfully to key: {c}")
+            else:
+                # Create a new document if key does not exist
+                collection2.insert_one({'spec':s,'course':c,'Instructor':[i]})
+                st.success(f"New key created, data inserted: {s}")
+
+    elif page == "Assign View":
+        st.title("Assign View")
+        st.write("Welcome to the Assign View.")
+        documents = collection1.find({}, {"spec": 1, "_id": 0})
+        if documents!=[]:
+            key_values = [doc['spec'] for doc in documents if 'spec' in doc]
+            option = st.selectbox("Specialization",(key_values))
+        if option:
+        # Find all documents where the key exists
+            courses = collection2.find({'spec':option})
+            if courses:
+                st.write(f"Documents with the key '{option}':")
+                st.dataframe(courses)  # Display documents in a table format
+            else:
+                st.write(f"No documents found with the key: {option}")
+
+    elif page == "Notification":
+        st.session_state["messages"]=[i for i in sum.find({})][0]
+        st.title("Customer Service")
+        mes=[]
+        c=cust.find({},{'query':1,'id':1,'_id':0})
+        if c !=[]:
+            for j in c:
+                    a=f'{j["id"]}.{j["query"]}'
+                    mes.append(a)
+            option = st.selectbox("Notifications",(mes))
+            
+            if option is not None:
+                o=option.split('.')
+                for msg in st.session_state.messages[o[0]]:
+                    st.chat_message(msg["role"]).write(msg["content"])
+                if prompt := st.chat_input():
+                    st.session_state["messages"][o[0]].append({"role": "admin", "content": prompt})
+                    st.chat_message("admin").write(prompt)
+                if st.button('clear'):
+                    cust.delete_one({'id':o[0],'query':o[1]})
+                    st.session_state.admin_joined[st.session_state['userid']]=False
+                
+                sum.delete_many({})
+                sum.insert_one(st.session_state["messages"])
+                
+    
+        else:
+            st.write('No Notifications')
+
+        
+            
+        
+    if st.button("Logout"):
+        logout()
+
+
+# Control access
+if not st.session_state["reg_in"]:
+    if not st.session_state["logged_in"]:
+        login()
+    else:
+        if st.session_state['role']=='Student':
+            mains()
+        if st.session_state['role']=='Admin':
+            maina()
+        if st.session_state['role']=='Instructor':
+            maini()
+
+else:
+    reg()
