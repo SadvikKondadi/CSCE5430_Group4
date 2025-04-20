@@ -562,3 +562,28 @@ def maini():
                 display_pdf(pdf_data)
         # Convert to bytes and display
         st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
+
+    elif page == "Roll Call":
+        st.title("Roll Call")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        ma=p.find({'course':optionm,'instructor':st.session_state['userid']},{'_id':0,'id':1})
+        r=[]
+        for i in ma:
+            id=st.checkbox(i['id'])
+            if id==True:
+                r.append(i['id'])
+        if st.button('Submit'):
+            st.session_state.call=st.session_state.call+1
+            ab.insert_one({'course':optionm,'instructor':st.session_state['userid'],'att':r})
+            if ag.find({}) is not None:
+                ag.delete_many({})
+            data=list(ab.find({},{'_id':0,'att':1}))
+            all_att = [course for doc in data for course in doc["att"]]
+            att_counts = Counter(all_att)
+            att=dict(att_counts)
+            atd={k: (v / st.session_state.call)*100 for k, v in att.items()}
+            atd.update({'course':optionm,'instructor':st.session_state['userid']})
+            ag.insert_one(atd)
