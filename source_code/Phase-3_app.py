@@ -276,3 +276,166 @@ def retrivala(c,ins):
     else:
         st.warning('Already Answered')
 
+def login():
+    st.title("Login Page")
+    userid = st.text_input("Userid")
+    password = st.text_input("Password", type="password")
+    'Create an Account'
+    if st.button('Registration form'):
+        st.session_state["reg_in"] = True
+        st.session_state["rerun"] = True
+        st.rerun()
+
+    if st.button("Login"):
+            user = collection.find_one({"id": userid})
+            if user is not None: 
+                if user["pwd"] == password:
+                    st.session_state["logged_in"] = True
+                    st.session_state["userid"] = userid
+                    st.session_state["role"] = user["role"]
+                    st.session_state["rerun"] = True
+                    st.rerun()  # Refresh to show navigation
+                else:
+                    st.error("Invalid Password")
+            else:
+                    st.error("Invalid Userid")
+
+def moduleview():
+    st.title("📄 Retrieve and Display PDFs from MongoDB")
+
+    # Fetch all stored PDF files
+    pdf_files = list(db.fs.files.find({}, {"filename": 1, "_id": 1}))
+
+    # Dropdown to select a PDF file
+    if pdf_files!=[]:
+        file_options = {file["filename"]: file["_id"] for file in pdf_files}
+        selected_filename = st.selectbox("Select a PDF to View", list(file_options.keys()))
+
+        if st.button("Load PDF"):
+            # Retrieve the PDF file from MongoDB
+            file_id = file_options[selected_filename]
+            pdf_data = fs.get(file_id).read()
+            
+            # Convert to bytes and display
+            st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename, mime="application/pdf")
+            
+            st.write("📄 **PDF Preview:**")
+            st.pdf(io.BytesIO(pdf_data))
+    else:
+        st.write("⚠️ No PDFs found in the database.")
+
+def mainc():
+    llm=ChatOpenAI(api_key=st.secrets["OPEN_API_KEY"],                            #st.secrets["OPEN_API_KEY"]
+                   model_name='gpt-4o',
+                   temperature=0.0)
+    prompt_template='''If any actionable prompt is given the state yes else give the response.   
+    Text:
+    {context}'''
+    PROMPT = PromptTemplate(
+    template=prompt_template, input_variables=["context"])
+    
+    i=0
+    if st.session_state['userid'] not in st.session_state['messages']:
+        st.session_state['messages'][st.session_state['userid']] = [{"role": "assistant", "content": "Hello! Welcome to customer care. How Can I help you?"}]
+        st.session_state.admin_joined[st.session_state['userid']] = False
+        i=1    
+    if i==1:
+        st.session_state["messages"].update([i for i in sum.find({})][0])
+        i=0
+    else:
+        st.session_state["messages"]=[i for i in sum.find({})][0]
+
+    for msg in st.session_state.messages[st.session_state['userid']]:
+        
+        st.chat_message(msg["role"]).write(msg["content"])
+    
+    if prompt := st.chat_input():
+    
+        st.session_state["messages"][st.session_state['userid']].append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
+        chain = LLMChain(llm=llm, prompt=PROMPT)
+        answer=chain.run(prompt)
+        if re.search(r'\bYes\b', answer):
+            cust.insert_one({'id':st.session_state["userid"],'query':prompt})
+            st.chat_message("assistant").write("Notified to the Admin, He will get back to you soon...")
+            st.session_state.admin_joined[st.session_state['userid']] = True
+            
+            
+        elif not st.session_state.admin_joined[st.session_state['userid']]:
+            prompt_template='''Accept the queries as a customer care and give an accuarte reply.   
+            Text:
+            {context}'''
+            PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context"])
+            chain = LLMChain(llm=llm, prompt=PROMPT).run(prompt)
+            st.session_state["messages"][st.session_state['userid']].append({"role": "assistant", "content": chain})
+            st.chat_message("assistant").write(chain)
+
+    i=1
+    sum.delete_many({})
+    sum.insert_one(st.session_state["messages"])
+    
+
+       
+# Main app interface Student
+def maini():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Dashboard", "Module", "view Assignments","Roll Call","View Attendance","Correction","Customer Care"])
+
+    if page == "Dashboard":
+        st.title("Dashboard")
+        st.write(f"Hello, {st.session_state['userid']}! You are logged in as {st.session_state['role']}.")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+
+    elif page == "Module":
+        st.title("Module")
+        st.write("Welcome to the Module creation page.")
+        flag = st.toggle("AI Correction")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        name=st.text_input("Enter the module name")
+        e=None
+        existing_file = db.fs.files.find_one({"metadata.name": name})
+        e=m.find_one({"name":name})
+        if existing_file is not None or e is not None:
+            st.warning("⚠️ A file with this unique ID already exists! Please enter a different ID.")
+        else:
+            description=st.text_area("Enter the text")
+            # File uploader widget
+            uploaded_file = st.file_uploader("Upload a PDF file", type=[])
+            option = st.selectbox("Module",('Learning Content','Assignment','Assesment'))
+            if option=='Learning Content' or option=='Assignment':
+                
+                if st.button("Upload"):
+                    if uploaded_file is not None:
+                        st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+                        # Convert file to binary for MongoDB storage
+                        file_data = uploaded_file.read()
+                        
+                        # Check if file already exists in MongoDB
+                        existing_file = db.fs.files.find_one({"filename": uploaded_file.name})
+                        
+                        if existing_file:
+                            st.warning("⚠️ File already exists in MongoDB.")
+                        else:
+                            # Store file in GridFS
+                            if option=='Learning Content':
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
+                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+                            else:
+                                file_id = fs.put(file_data, filename=uploaded_file.name,metadata={"filename":uploaded_file.name,"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
+                                st.success(f"📁 File saved to MongoDB with ID: {file_id}")
+
+                    else:
+                        if option=='Learning Content':
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option})
+                            st.success(f"✅ Uploaded")
+                        else:
+                            m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag})
+                            st.success(f"✅ Uploaded")
+
