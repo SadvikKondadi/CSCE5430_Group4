@@ -527,3 +527,38 @@ def maini():
                                 m.insert_one({"name": name, "course": optionm, "description": description,'id':st.session_state['userid'],'option':option,'flag':flag,'choice':choice,'ans':an,'tmark':mar})
                                 st.success(f"✅ Uploaded")
 
+    elif page == "view Assignments":
+        st.title("view Assignments")
+        module=[]
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+            optionm = st.selectbox("Course",(key_values))
+
+        pdf_files = list(db.fs.files.find({}, {"metadata": 1}))
+        if pdf_files!=[]:
+            for file in pdf_files:
+                metadata = file.get("metadata", {})
+                if metadata['course']==optionm:
+                    module.append(metadata['name'])
+        n=m.find({},{"name":1})
+        if n is not None:
+            for f in n:
+                module.append(f['name'])
+        selected_filename = st.selectbox("Select module",module)
+        pdf_files = dba.fs.files.find({'filename': {"$regex": selected_filename}}, {"filename": 1})
+        
+        
+        a=[]
+        if pdf_files is not None:
+            for i in pdf_files:
+                a.append(i['filename'])    
+        selected_filename = st.selectbox("Select a PDF to View",a)
+        file_id = dba.fs.files.find_one({"filename":selected_filename}, {"_id": 1})
+        
+        if file_id is not None:
+            pdf_data = fsa.get(file_id['_id']).read()
+            if 'pdf' in selected_filename.split('.'):
+                display_pdf(pdf_data)
+        # Convert to bytes and display
+        st.download_button(label="Download PDF", data=pdf_data, file_name=selected_filename)
