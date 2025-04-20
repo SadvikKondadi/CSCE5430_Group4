@@ -587,3 +587,38 @@ def maini():
             atd={k: (v / st.session_state.call)*100 for k, v in att.items()}
             atd.update({'course':optionm,'instructor':st.session_state['userid']})
             ag.insert_one(atd)
+
+    elif page=="View Attendance":
+        st.title("Attendance")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        ma=ag.find({'course':optionm,'instructor':st.session_state['userid']},{'_id':0,'course':0,'instructor':0})
+        for i in ma:
+            st.write(pd.DataFrame([i]))
+
+    elif page=="Correction":
+        st.title("Descriptive Questions Correction")
+        documents=collection2.find({"Instructor": {"$in": [st.session_state["userid"]]}},{"course": 1, "_id": 0})
+        if documents is not None:
+            key_values = [doc['course'] for doc in documents if 'course' in doc]
+        optionm = st.selectbox("Course",(key_values))
+        x=list(ansd.find({'flag':False,'course':optionm,'ins':st.session_state["userid"]},{'_id':0,'question':1,'ans':1}))
+
+        for i in x:
+            st.write(f'{i["question"]}')
+            st.write(f'Ans: {i["ans"]}')
+            st.text_input('marks')
+        if st.button('Grade'):
+            st.session_state.descriptive=st.session_state.descriptive+1
+            ansd.find({'flag':False,'course':optionm,'ins':st.session_state["userid"],'question':i["question"],'ans':i["ans"]},{'_id':0,'id':1})
+            ass.insert_one({'Exam':f'Descriptive{st.session_state.descriptive}','course':optionm,'instructor':st.session_state['userid'],'student':st.session_state['userid'],'Marks':st.session_state.mar})
+
+        
+    elif page == "Customer Care":
+        st.title("Customer Care")
+        mainc()
+
+    if st.button("Logout"):
+        logout()
