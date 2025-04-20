@@ -77,3 +77,41 @@ def get_embedding(text, model="text-embedding-3-small"):
     )
     return response.data[0].embedding
 
+def cosine_similarity(vec1, vec2):
+    vec1 = np.array(vec1)
+    vec2 = np.array(vec2)
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+
+#Reg function
+def reg():
+    'Already have an Account'
+    if st.button('Login Page'):
+        st.session_state["reg_in"] = False
+        st.session_state["rerun"] = True
+        st.rerun()
+    new_userid = st.text_input("New Userid")
+    new_password = st.text_input("New Password", type="password")
+    s=st.text_input("Specialization")
+    
+        
+    if st.button("Register"):
+        if collection.find_one({"id": new_userid}) is not None:
+            st.warning("The UserID already EXIST.")
+        else:
+            if new_userid and new_password:
+                y={"id":new_userid,"pwd":new_password,"role":'Student',"spec":s,"balance":300}
+                collection.insert_one(y)
+                st.success('Registered Sucessfully')
+            else:
+                st.warning("Please enter both userid and password.")
+            st.session_state["reg_in"] = False
+            st.session_state["rerun"] = True
+            st.rerun()
+
+def display_pdf(pdf_bytes):
+    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+    #binary_data = pdf_file.getvalue()
+    #pdf_viewer(input=binary_data,width=700)
+
